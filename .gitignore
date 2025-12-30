@@ -1,0 +1,5 @@
+vendor/
+libs/db.php
+uploads/
+libs/cache/
+.phpunit.result.cache
