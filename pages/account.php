@@ -1,33 +1,12 @@
 <?php
-/*
-___.   .__  __    __            __                                      __   
-\_ |__ |__|/  |__/  |_ ___.__._/  |_  __________________   ____   _____/  |_ 
- | __ \|  \   __\   __<   |  |\   __\/  _ \_  __ \_  __ \_/ __ \ /    \   __\
- | \_\ \  ||  |  |  |  \___  | |  | (  <_> )  | \/|  | \/\  ___/|   |  \  |  
- |___  /__||__|  |__|  / ____| |__|  \____/|__|   |__|    \___  >___|  /__|  
-     \/                \/                                     \/     \/      
-     
-     
-Contact:  contact.atmoner@gmail.com     
 
-This file is part of Bittytorrent.
-
-Bittytorrent is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Bittytorrent is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Bittytorrent.  If not, see <http://www.gnu.org/licenses/>. 
-          
-*/
+use App\Core\Bittytorrent;
 
 if (!defined("IN_TORRENT")) die("Access denied!");
+
+// Assuming global objects
+/** @var Bittytorrent $startUp */
+global $startUp, $conf, $hook, $smarty;
 
 if (!isset($_COOKIE['token']) 
 	|| empty($_COOKIE['token']) 
@@ -52,11 +31,8 @@ $getUserdata = $startUp->getMydata();
 $hook->add_block('getMytorrent', '', '','270-right',12);
  
 
-if(!isset($_GET["sortedBy"])) $_GET["sortedBy"] ='';
-		$sortedBy = $_GET["sortedBy"];
-
-if(!isset($_GET["axis"])) $_GET["axis"] ='';
-		$axis = $_GET["axis"];
+$sortedBy = $_GET["sortedBy"] ?? '';
+$axis = $_GET["axis"] ?? '';
 
 // required connect
 SmartyPaginate::connect();
@@ -66,14 +42,10 @@ SmartyPaginate::setLimit(10);
 if (!isset($_GET['next']))
 	SmartyPaginate::reset(); // reset/init the session data all time!
  
-SmartyPaginate::setUrl('account');
+SmartyPaginate::setUrl('account?token='.($_GET['token'] ?? ''));
 $startUp->paginatePage = 'account';
 
 $smarty->assign("getUserdata",$getUserdata);
-$smarty->assign("getMyTorrents",$startUp->getMyTorrents($_GET["sortedBy"],$_GET["axis"])); 
+$smarty->assign("getMyTorrents",$startUp->getMyTorrents($sortedBy, $axis));
 $smarty->assign("getGravatar",$startUp->get_gravatar($getUserdata->mail));
 SmartyPaginate::assign($smarty); // paginate
-
-
-
-

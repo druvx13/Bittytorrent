@@ -1,23 +1,21 @@
 <?php
 
-// Woohoo! Who needs mhash or PHP 4.3?
-// Don't require it. Still recommended, but not mandatory.
-if (!function_exists('sha1'))
-	@include_once('sha1lib.php');
+namespace App\Core;
 
-// We'll protect the namespace of our code
-// using a class
 class BEncode {
 	// Dictionary keys must be sorted. foreach tends to iterate over the order
 	// the array was made, so we make a new one in sorted order. :)
-	function makeSorted($array) {
+	public function makeSorted(array $array): array {
 		// Shouldn't happen!
 		if (empty($array))
 			return $array;
 		$i = 0;
+        $keys = [];
 		foreach($array as $key => $dummy)
-			$keys[$i++] = stripslashes($key);
+			$keys[$i++] = stripslashes((string)$key);
 		sort($keys);
+
+        $return = [];
 		for ($i=0; isset($keys[$i]); $i++)
 			$return[addslashes($keys[$i])] = $array[addslashes($keys[$i])];
 		return $return;
@@ -25,7 +23,7 @@ class BEncode {
 
 	// Encodes strings, integers and empty dictionaries.
 	// $unstrip is set to true when decoding dictionary keys
-	function encodeEntry($entry, &$fd, $unstrip = false) {
+	public function encodeEntry(mixed $entry, string &$fd, bool $unstrip = false): void {
 		if (is_bool($entry)) {
 			$fd .= 'de';
 			return;
@@ -35,15 +33,15 @@ class BEncode {
 			return;
 		}
 		if ($unstrip)
-			$myentry = stripslashes($entry);
+			$myentry = stripslashes((string)$entry);
 		else
-			$myentry = $entry;
+			$myentry = (string)$entry;
 		$length = strlen($myentry);
 		$fd .= $length.':'.$myentry;
 	}
 
 	// Encodes lists
-	function encodeList($array, &$fd) {
+	public function encodeList(array $array, string &$fd): void {
 		$fd .= 'l';
 		// The empty list is defined as array();
 		if (empty($array)) {
@@ -57,23 +55,31 @@ class BEncode {
 
 	// Passes lists and dictionaries accordingly, and has encodeEntry handle
 	// the strings and integers.
-	function decideEncode($unknown, &$fd) {
+	public function decideEncode(mixed $unknown, string &$fd): void {
 		if (is_array($unknown)) {
 			if (isset($unknown[0]) || empty($unknown))
-				return $this->encodeList($unknown, $fd);
+				$this->encodeList($unknown, $fd);
 			else
-				return $this->encodeDict($unknown, $fd);
+				$this->encodeDict($unknown, $fd);
+            return;
 		}
 		$this->encodeEntry($unknown, $fd);
 	}
 
 	// Encodes dictionaries
-	function encodeDict($array, &$fd) {
+	public function encodeDict(mixed $array, string &$fd): void {
 		$fd .= 'd';
 		if (is_bool($array)) {
 			$fd .= 'e';
 			return;
 		}
+        if (!is_array($array)) {
+            // Fallback for unexpected type in dictionary context?
+            // Legacy code logic: if (is_bool($array))...
+            // If it reaches here and not array, likely unexpected.
+            return;
+        }
+
 		// NEED TO SORT!
 		$newarray = $this->makeSorted($array);
 		foreach($newarray as $left => $right) {
@@ -82,13 +88,15 @@ class BEncode {
 		}
 		$fd .= 'e';
 	}
-} // End of class declaration.
+}
 
 // Use this function in your own code.
-function BEncode($array) {
-	$string = '';
-	$encoder = new BEncode;
-	$encoder->decideEncode($array, $string);
-	return $string;
+// Making this a global function for compatibility if needed, or helper
+if (!function_exists('BEncode')) {
+    function BEncode(mixed $array): string {
+        $string = '';
+        $encoder = new BEncode;
+        $encoder->decideEncode($array, $string);
+        return $string;
+    }
 }
-?>

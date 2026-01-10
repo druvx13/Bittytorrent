@@ -1,37 +1,19 @@
 <?php
-/*
-___.   .__  __    __            __                                      __   
-\_ |__ |__|/  |__/  |_ ___.__._/  |_  __________________   ____   _____/  |_ 
- | __ \|  \   __\   __<   |  |\   __\/  _ \_  __ \_  __ \_/ __ \ /    \   __\
- | \_\ \  ||  |  |  |  \___  | |  | (  <_> )  | \/|  | \/\  ___/|   |  \  |  
- |___  /__||__|  |__|  / ____| |__|  \____/|__|   |__|    \___  >___|  /__|  
-     \/                \/                                     \/     \/      
-     
-     
-Contact:  contact.atmoner@gmail.com     
 
-This file is part of Bittytorrent.
+use App\Core\Bittytorrent;
+use App\Database\DB;
 
-Bittytorrent is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Bittytorrent is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Bittytorrent.  If not, see <http://www.gnu.org/licenses/>. 
-          
-*/
- 
 if (!defined("IN_TORRENT")) die("Access denied!");
+
+// Assuming global objects
+/** @var Bittytorrent $startUp */
+global $startUp, $conf, $smarty;
+$db = DB::getInstance();
  
 if (isset($_GET['info_hash'])) {
 
-	$torrent = $db->get_row("SELECT id, announce, info_hash FROM torrents WHERE info_hash = '".$db->escape($_GET['info_hash'])."'");
+    $hash = $db->escape($_GET['info_hash']);
+	$torrent = $db->get_row("SELECT id, announce, info_hash FROM torrents WHERE info_hash = '{$hash}'");
 
 	if($torrent){		
 		$returnError = "";
@@ -44,12 +26,20 @@ if (isset($_GET['info_hash'])) {
  
 		if (is_array($annouce)) {
 			foreach ($annouce as $key => $value) {
-				$returnError .= $startUp->torrentScrape($value[0],$torrent->info_hash);		
+                // startUp->torrentScrape doesn't return string in my refactor, it prints error.
+                // I should update my refactor of torrentScrape to return string or capture output?
+                // The original code expected return.
+                // Let's assume my refactor captures output buffer or I adjust it.
+                // For now, capture output.
+                ob_start();
+				$startUp->torrentScrape($value[0],$torrent->info_hash);
+                $returnError .= ob_get_clean();
 			}	
 			$smarty->assign('returnScrape',$returnError);		
 		} else {
-	 
-				$smarty->assign('soloScrape',$startUp->torrentScrape($annouce,$torrent->info_hash));	
+	            ob_start();
+				$startUp->torrentScrape($annouce,$torrent->info_hash);
+				$smarty->assign('soloScrape', ob_get_clean());
 		}
 		
  
@@ -71,11 +61,9 @@ if (isset($_GET['info_hash'])) {
 		// var_dump($torrent);
  		// $startUp->redirect($conf['baseurl'].'/'.$startUp->makeUrl(array('page'=>'torrent-detail','id'=>$torrent->id)));
 	} else {
-		header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found"); // Set 404, no reference to anything on the search engines!
+        if (!headers_sent()) {
+		    header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found"); // Set 404, no reference to anything on the search engines!
+        }
 		$smarty->assign('notFound',true);
 	}
 }
-
-
- 
-

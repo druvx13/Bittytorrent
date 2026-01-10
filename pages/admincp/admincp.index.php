@@ -1,36 +1,15 @@
 <?php
-/*
-___.   .__  __    __            __                                      __   
-\_ |__ |__|/  |__/  |_ ___.__._/  |_  __________________   ____   _____/  |_ 
- | __ \|  \   __\   __<   |  |\   __\/  _ \_  __ \_  __ \_/ __ \ /    \   __\
- | \_\ \  ||  |  |  |  \___  | |  | (  <_> )  | \/|  | \/\  ___/|   |  \  |  
- |___  /__||__|  |__|  / ____| |__|  \____/|__|   |__|    \___  >___|  /__|  
-     \/                \/                                     \/     \/      
-     
-     
-Contact:  contact.atmoner@gmail.com     
 
-This file is part of Bittytorrent.
-
-Bittytorrent is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Bittytorrent is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Bittytorrent.  If not, see <http://www.gnu.org/licenses/>. 
-          
-*/
+use App\Core\Bittytorrent;
 
 if (!defined("IN_TORRENT"))
       die("Access denied!");
 
-if ($userData->admin_access != 'true')
+// Assuming global objects
+/** @var Bittytorrent $startUp */
+global $startUp, $conf, $userData, $hook, $smarty, $db;
+
+if (($userData->admin_access ?? 'false') != 'true')
 		$startUp->redirect($conf['baseurl']);
 
 if (!isset($_COOKIE['tokenAdmin']) 
@@ -49,7 +28,7 @@ if ($hook->hook_exist('admin_action'))
 if ($hook->hook_exist('new_admin_page')) 
 		$hook->execute_hook('new_admin_page');
 			
-$do = (isset($_GET["act"])?$_GET["act"]:"");
+$do = $_GET["act"] ?? "";
 
 $hook->add_admin_page('','admincp.settings.php','admincp.settings.html');
 $hook->add_admin_page('users','admincp.users.php','admincp.users.html');
@@ -64,9 +43,8 @@ $hook->add_admin_page('update','admincp.update.php','admincp.update.html');
 				
 		if ($valueAdmin['name'] === $do) { 
 			if (!empty($valueAdmin['phpFile']))
-				include $valueAdmin['phpFile'];
+				include __DIR__ . '/' . $valueAdmin['phpFile']; // Use explicit path relative to this file
 			if (!empty($valueAdmin['htmlFile']))
 				$smarty->display($valueAdmin['htmlFile']);		        	
 		}  			
 	}
- 

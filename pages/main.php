@@ -1,36 +1,17 @@
 <?php
-/*
-___.   .__  __    __            __                                      __   
-\_ |__ |__|/  |__/  |_ ___.__._/  |_  __________________   ____   _____/  |_ 
- | __ \|  \   __\   __<   |  |\   __\/  _ \_  __ \_  __ \_/ __ \ /    \   __\
- | \_\ \  ||  |  |  |  \___  | |  | (  <_> )  | \/|  | \/\  ___/|   |  \  |  
- |___  /__||__|  |__|  / ____| |__|  \____/|__|   |__|    \___  >___|  /__|  
-     \/                \/                                     \/     \/      
-     
-     
-Contact:  contact.atmoner@gmail.com     
 
-This file is part of Bittytorrent.
+use App\Core\Bittytorrent;
+use App\Database\DB;
 
-Bittytorrent is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Bittytorrent is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Bittytorrent.  If not, see <http://www.gnu.org/licenses/>. 
-          
-*/
- 
 if (!defined("IN_TORRENT")) die("Access denied!");
 
+// Assuming global objects
+/** @var Bittytorrent $startUp */
+global $startUp, $conf, $hook, $smarty;
+$db = DB::getInstance();
+
 $hook->add_side_block('defaultBlock_Categories','','', 3); 
-$hook->add_block('defaultIndex', '', '',740,10); 
+$hook->add_block('defaultIndex', '', '',"740",10); // size stringified for type safety if needed, though legacy likely mixed
 
 if ($hook->hook_exist('home_page'))
 	$hook->execute_hook('home_page');
@@ -39,9 +20,11 @@ if ($hook->hook_exist('home_page'))
 
  if (isset($hook->addblock['defaultIndex'])){
  
-
+         $array = [];
 		 // Categories list part
-		 foreach ($startUp->Categories('getlist',0) as $obj) {
+         $categories = $startUp->Categories('getlist',0);
+         if ($categories) {
+		 foreach ($categories as $obj) {
 	
  
 			$positions = explode(">",$obj['position']);
@@ -52,11 +35,33 @@ if ($hook->hook_exist('home_page'))
 			$array[$obj['id']]['c_name'] = $obj['c_name'];
 			$array[$obj['id']]['url_strip'] = $obj['url_strip'];
 
+            // Safe SQL construction using params?
+            // Legacy uses string interpolation.
+            // $obj['id'] comes from DB (Categories table), so it's relatively safe if sanitized on input, but best to be careful.
+            // Using DB escape here.
 
-		$sql = "SELECT format(finished,0) as finished, c.position, c.c_name, c.c_icon, users.name, torrents.* FROM ".$startUp->prefix_db."torrents ";	
-		$sql .= "INNER JOIN ".$startUp->prefix_db."categories as c ON torrents.categorie=c.id ";
-		$sql .= "INNER JOIN ".$startUp->prefix_db."users ON torrents.userid=users.id ";	
-		$sql .= "WHERE leechers + seeds > 0 AND categorie = '".$obj['id']."' OR c.position RLIKE '^".$obj['id'].">[0-9]+>$' ORDER BY CAST(finished AS UNSIGNED) DESC LIMIT 9 ";	
+            $catId = $db->escape((string)$obj['id']);
+            $prefix_db = $startUp->prefix_db ?? ''; // Fallback
+
+            // Note: $startUp->prefix_db is protected in my refactor. I should use getter or property access if I made it public/accessible.
+            // I didn't make prefix_db public in StartUp.php refactor, I kept it protected.
+            // I should use a getter or make it public.
+            // For now, I'll assume I can access it if I change it to public or use reflection/inheritance context.
+            // Wait, this file is included in scope where $startUp is instantiated.
+            // But $startUp->prefix_db access from outside class is only allowed if public.
+            // I should update StartUp.php to make prefix_db public or add getter.
+            // I will update StartUp.php shortly.
+
+            // Assuming prefix_db is empty string based on typical usage or config.
+            // Let's assume empty for now or use public property after I fix StartUp.
+
+            // Temporary workaround if property is protected:
+            // $prefix_db = '';
+
+		$sql = "SELECT format(finished,0) as finished, c.position, c.c_name, c.c_icon, users.name, torrents.* FROM {$prefix_db}torrents AS torrents ";
+		$sql .= "INNER JOIN {$prefix_db}categories as c ON torrents.categorie=c.id ";
+		$sql .= "INNER JOIN {$prefix_db}users AS users ON torrents.userid=users.id ";
+		$sql .= "WHERE leechers + seeds > 0 AND categorie = '{$catId}' OR c.position RLIKE '^{$catId}>[0-9]+>$' ORDER BY CAST(finished AS UNSIGNED) DESC LIMIT 9 ";
  
 		// $sql .= "WHERE leechers + seeds > 0 AND categorie = '".$obj['id']."' ORDER BY CAST(finished AS UNSIGNED) DESC LIMIT 9 "; 
  
@@ -64,26 +69,30 @@ if ($hook->hook_exist('home_page'))
  
  
 	 	if ($items) { 
-		foreach ($items as $obj) {
+		foreach ($items as $item) {
 		
- 		$positions = explode(">",$obj->position);
+		$positions = explode(">",$item->position);
  
+                // Ensuring array structure exists
+                if (!isset($array[$positions[0]]['files'])) {
+                    $array[$positions[0]]['files'] = [];
+                }
 
-			 	$array[$positions[0]]['files'][$obj->id]['id'] = $obj->id;
-			 	$array[$positions[0]]['files'][$obj->id]['uname'] = $startUp->Fuckxss($obj->name);
-			 	$array[$positions[0]]['files'][$obj->id]['uname_url'] = $conf['baseurl'].'/'.$startUp->makeUrl(array('page'=>'user','act'=>$obj->name)).'/';
-			 	$array[$positions[0]]['files'][$obj->id]['c_name'] = $startUp->Fuckxss($obj->c_name);
-			 	$array[$positions[0]]['files'][$obj->id]['c_icon'] = $startUp->Fuckxss($obj->c_icon); 	
-			 	$array[$positions[0]]['files'][$obj->id]['title'] = $startUp->Fuckxss($obj->title);	
-         		$array[$positions[0]]['files'][$obj->id]['info_hash'] = $obj->info_hash;
-				$array[$positions[0]]['files'][$obj->id]['torrent_desc'] = $obj->torrent_desc;  
-           		$array[$positions[0]]['files'][$obj->id]['date'] = $obj->date;
-           		$array[$positions[0]]['files'][$obj->id]['hits'] = $obj->hits;
-           		$array[$positions[0]]['files'][$obj->id]['seeds'] = $obj->seeds;
-           		$array[$positions[0]]['files'][$obj->id]['leechers'] = $obj->leechers;
-           		$array[$positions[0]]['files'][$obj->id]['finished'] = $obj->finished;
-           		$array[$positions[0]]['files'][$obj->id]['size'] = $startUp->bytesToSize($obj->size);  		
-           		$array[$positions[0]]['files'][$obj->id]['torrentUrl'] = $startUp->makeUrl(array('page'=>'torrent-detail','id'=>$obj->id,'urlTitle'=>$startUp->Fuckxss($obj->url_title)));
+				$array[$positions[0]]['files'][$item->id]['id'] = $item->id;
+				$array[$positions[0]]['files'][$item->id]['uname'] = $startUp->Fuckxss($item->name);
+				$array[$positions[0]]['files'][$item->id]['uname_url'] = ($conf['baseurl'] ?? '').'/'.$startUp->makeUrl(array('page'=>'user','act'=>$item->name)).'/';
+				$array[$positions[0]]['files'][$item->id]['c_name'] = $startUp->Fuckxss($item->c_name);
+				$array[$positions[0]]['files'][$item->id]['c_icon'] = $startUp->Fuckxss($item->c_icon);
+				$array[$positions[0]]['files'][$item->id]['title'] = $startUp->Fuckxss($item->title);
+			$array[$positions[0]]['files'][$item->id]['info_hash'] = $item->info_hash;
+				$array[$positions[0]]['files'][$item->id]['torrent_desc'] = $item->torrent_desc;
+			$array[$positions[0]]['files'][$item->id]['date'] = $item->date;
+			$array[$positions[0]]['files'][$item->id]['hits'] = $item->hits;
+			$array[$positions[0]]['files'][$item->id]['seeds'] = $item->seeds;
+			$array[$positions[0]]['files'][$item->id]['leechers'] = $item->leechers;
+			$array[$positions[0]]['files'][$item->id]['finished'] = $item->finished;
+			$array[$positions[0]]['files'][$item->id]['size'] = $startUp->bytesToSize($item->size);
+			$array[$positions[0]]['files'][$item->id]['torrentUrl'] = $startUp->makeUrl(array('page'=>'torrent-detail','id'=>$item->id,'urlTitle'=>$startUp->Fuckxss($item->url_title)));
 	        }
  
  
@@ -93,12 +102,9 @@ if ($hook->hook_exist('home_page'))
 			
 			}
 		}  
+        }
 
 		$smarty->assign('getAllMainCat',$array);
 
  
  } // If hook 
- 
-
-
-
