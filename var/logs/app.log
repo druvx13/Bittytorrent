@@ -11,3 +11,4 @@
 [2026-01-29T03:08:26.357081+00:00] bittytorrent.INFO: Database connection established [] []
 [2026-01-29T04:14:06.305613+00:00] bittytorrent.INFO: Database connection established [] []
 [2026-01-29T04:14:06.369860+00:00] bittytorrent.INFO: Database connection established [] []
+[2026-01-29T06:41:47.147623+00:00] bittytorrent.ERROR: Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: NO) [] []
