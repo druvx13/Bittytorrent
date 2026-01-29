@@ -1,0 +1,115 @@
+{% extends "layout/base.twig" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1><i class="bi bi-person-circle"></i> My Profile</h1>
+        <hr>
+        
+        {% if session.success %}
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ session.success }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        {% if session.error %}
+        <div class="alert alert-danger alert-dismissible fade show">
+            {{ session.error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Account Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Username:</dt>
+                    <dd class="col-sm-9">{{ profile_user.username }}</dd>
+                    
+                    <dt class="col-sm-3">Email:</dt>
+                    <dd class="col-sm-9">{{ profile_user.email }}</dd>
+                    
+                    <dt class="col-sm-3">Role:</dt>
+                    <dd class="col-sm-9">
+                        {% if profile_user.role == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
+                        {% else %}
+                            <span class="badge bg-secondary">User</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-3">Uploaded:</dt>
+                    <dd class="col-sm-9">{{ (profile_user.upload_bytes / 1024 / 1024)|number_format(2) }} MB</dd>
+                    
+                    <dt class="col-sm-3">Downloaded:</dt>
+                    <dd class="col-sm-9">{{ (profile_user.download_bytes / 1024 / 1024)|number_format(2) }} MB</dd>
+                    
+                    <dt class="col-sm-3">Member Since:</dt>
+                    <dd class="col-sm-9">{{ profile_user.created_at|date('F j, Y') }}</dd>
+                    
+                    <dt class="col-sm-3">Last Login:</dt>
+                    <dd class="col-sm-9">
+                        {% if profile_user.last_login %}
+                            {{ profile_user.last_login|date('F j, Y H:i') }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/profile">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" value="{{ profile_user.location }}" maxlength="100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="website" class="form-label">Website</label>
+                        <input type="url" class="form-control" id="website" name="website" value="{{ profile_user.website }}" maxlength="200" placeholder="https://example.com">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="signature" class="form-label">Signature</label>
+                        <textarea class="form-control" id="signature" name="signature" rows="3" maxlength="500">{{ profile_user.signature }}</textarea>
+                        <div class="form-text">A short bio or signature (max 500 characters)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email_visible" name="email_visible" {% if profile_user.email_visible %}checked{% endif %}>
+                            <label class="form-check-label" for="email_visible">
+                                Make email address visible to other users
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="torrents_visible" name="torrents_visible" {% if profile_user.torrents_visible %}checked{% endif %}>
+                            <label class="form-check-label" for="torrents_visible">
+                                Show my torrents on my profile
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

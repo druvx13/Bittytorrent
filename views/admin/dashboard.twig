@@ -1,0 +1,168 @@
+{% extends "layout/base.twig" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1><i class="bi bi-speedometer2"></i> Admin Dashboard</h1>
+        <p class="text-muted">Welcome to the admin control panel</p>
+        <hr>
+    </div>
+</div>
+
+{% if session.success %}
+<div class="alert alert-success alert-dismissible fade show">
+    {{ session.success }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+{% if session.error %}
+<div class="alert alert-danger alert-dismissible fade show">
+    {{ session.error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people"></i> Total Users</h5>
+                <h2>{{ stats.total_users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-file-earmark"></i> Total Torrents</h5>
+                <h2>{{ stats.total_torrents }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-arrow-up-circle"></i> Seeders</h5>
+                <h2>{{ stats.recent_torrents|reduce((carry, t) => carry + t.seeders, 0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-arrow-down-circle"></i> Leechers</h5>
+                <h2>{{ stats.recent_torrents|reduce((carry, t) => carry + t.leechers, 0) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="btn-group" role="group">
+                    <a href="/admin/users" class="btn btn-outline-primary">
+                        <i class="bi bi-people"></i> Manage Users
+                    </a>
+                    <a href="/admin/torrents" class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark"></i> Manage Torrents
+                    </a>
+                    <a href="/admin/settings" class="btn btn-outline-secondary">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Recent Users</h5>
+            </div>
+            <div class="card-body">
+                {% if stats.recent_users %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in stats.recent_users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.role == 'admin' %}
+                                        <span class="badge bg-danger">Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">User</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.created_at|date('Y-m-d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="/admin/users" class="btn btn-sm btn-primary">View All Users</a>
+                {% else %}
+                <p class="text-muted">No users found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark"></i> Recent Torrents</h5>
+            </div>
+            <div class="card-body">
+                {% if stats.recent_torrents %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Seeders</th>
+                                <th>Leechers</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for torrent in stats.recent_torrents %}
+                            <tr>
+                                <td>
+                                    <a href="/torrent/{{ torrent.id }}">{{ torrent.title|slice(0, 30) }}...</a>
+                                </td>
+                                <td><span class="badge bg-success">{{ torrent.seeders }}</span></td>
+                                <td><span class="badge bg-warning">{{ torrent.leechers }}</span></td>
+                                <td>{{ torrent.created_at|date('Y-m-d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="/admin/torrents" class="btn btn-sm btn-success">View All Torrents</a>
+                {% else %}
+                <p class="text-muted">No torrents found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

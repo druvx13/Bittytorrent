@@ -17,6 +17,7 @@ use Bittytorrent\Controller\HomeController;
 use Bittytorrent\Controller\AuthController;
 use Bittytorrent\Controller\TorrentController;
 use Bittytorrent\Controller\TrackerController;
+use Bittytorrent\Controller\AdminController;
 
 // Check if running from CLI
 if (php_sapi_name() === 'cli') {
@@ -108,6 +109,48 @@ try {
     $router->get('/logout', function () {
         $controller = new AuthController();
         $controller->logout();
+    });
+    
+    // User Profile
+    $router->get('/profile', function () {
+        $controller = new AuthController();
+        $controller->showProfile();
+    });
+    
+    $router->post('/profile', function () {
+        $controller = new AuthController();
+        $controller->updateProfile();
+    });
+    
+    // Admin Panel
+    $router->get('/admin', function () {
+        $controller = new AdminController();
+        $controller->dashboard();
+    });
+    
+    $router->get('/admin/users', function () {
+        $controller = new AdminController();
+        $controller->users();
+    });
+    
+    $router->post('/admin/users/delete', function () {
+        $controller = new AdminController();
+        $controller->deleteUser();
+    });
+    
+    $router->get('/admin/torrents', function () {
+        $controller = new AdminController();
+        $controller->torrents();
+    });
+    
+    $router->post('/admin/torrents/delete', function () {
+        $controller = new AdminController();
+        $controller->deleteTorrent();
+    });
+    
+    $router->get('/admin/settings', function () {
+        $controller = new AdminController();
+        $controller->settings();
     });
     
     // Torrents

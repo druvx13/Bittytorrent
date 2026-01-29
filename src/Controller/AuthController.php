@@ -207,4 +207,58 @@ class AuthController extends BaseController
         
         $this->redirect('/login');
     }
+    
+    /**
+     * Show user profile
+     */
+    public function showProfile(): void
+    {
+        $this->requireAuth();
+        
+        $user = $this->getCurrentUser();
+        
+        $this->render('auth/profile.twig', [
+            'title' => 'My Profile',
+            'profile_user' => $user,
+        ]);
+    }
+    
+    /**
+     * Update user profile
+     */
+    public function updateProfile(): void
+    {
+        $this->requireAuth();
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/profile');
+            return;
+        }
+        
+        $csrf = $_POST['csrf_token'] ?? '';
+        if (!$this->verifyCsrf($csrf)) {
+            $_SESSION['error'] = 'Invalid CSRF token';
+            $this->redirect('/profile');
+            return;
+        }
+        
+        $userModel = new User();
+        $userId = (int)$_SESSION['user_id'];
+        
+        $data = [
+            'location' => $this->sanitize($_POST['location'] ?? ''),
+            'website' => $this->sanitize($_POST['website'] ?? ''),
+            'signature' => $this->sanitize($_POST['signature'] ?? ''),
+            'email_visible' => isset($_POST['email_visible']) ? 1 : 0,
+            'torrents_visible' => isset($_POST['torrents_visible']) ? 1 : 0,
+        ];
+        
+        if ($userModel->updateProfile($userId, $data)) {
+            $_SESSION['success'] = 'Profile updated successfully';
+        } else {
+            $_SESSION['error'] = 'Failed to update profile';
+        }
+        
+        $this->redirect('/profile');
+    }
 }

@@ -79,6 +79,7 @@ class User
         
         if ($user && password_verify($password, $user['password'])) {
             // Check if password needs rehashing (algorithm upgraded)
+            // Support both bcrypt and Argon2id - upgrade to Argon2id if using bcrypt
             if (password_needs_rehash($user['password'], PASSWORD_ARGON2ID)) {
                 $this->updatePassword((int)$user['id'], $password);
             }
