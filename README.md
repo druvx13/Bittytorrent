@@ -126,20 +126,33 @@ cd public && php -S localhost:8000
 
 We provide comprehensive documentation to help you get started:
 
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - **NEW!** Complete production deployment guide (all hosting types)
+### Getting Started
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete beginner's guide with detailed explanations
-- **[SETUP.md](SETUP.md)** - Detailed installation and configuration guide
 - **[INSTALL.md](INSTALL.md)** - Quick deployment reference
-- **[VENDOR_MANAGEMENT.md](VENDOR_MANAGEMENT.md)** - **NEW!** Managing dependencies
+- **[SETUP.md](SETUP.md)** - Detailed installation and configuration guide
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete production deployment guide (all hosting types)
+
+### Using the Tracker
+- **[TRACKER_GUIDE.md](TRACKER_GUIDE.md)** - **NEW!** Complete BitTorrent tracker usage guide
+  - How to create torrents with your tracker
+  - Configuration and maintenance
+  - Cron setup for stats updates
+  - Troubleshooting
+
+### Technical Documentation
+- **[VENDOR_MANAGEMENT.md](VENDOR_MANAGEMENT.md)** - Managing dependencies
 - **[SECURITY.md](SECURITY.md)** - Security features and best practices
 - **[PHP8_COMPATIBILITY.md](PHP8_COMPATIBILITY.md)** - PHP 8+ compatibility verification
+- **[PRODUCTION_FIXES.md](PRODUCTION_FIXES.md)** - Production error fixes
+- **[CONTROLLER_FIXES.md](CONTROLLER_FIXES.md)** - Controller method fixes
 
 ### Quick Links
 
 - 🆕 **New to Bittytorrent?** → Start with [GETTING_STARTED.md](GETTING_STARTED.md)
-- ⚙️ **Production Deployment?** → See [SETUP.md](SETUP.md)
+- 🎯 **Using the Tracker?** → See [TRACKER_GUIDE.md](TRACKER_GUIDE.md)
+- ⚙️ **Production Deployment?** → Read [DEPLOYMENT.md](DEPLOYMENT.md)
 - 🔧 **Quick Setup?** → Check [INSTALL.md](INSTALL.md)
-- 🔒 **Security Info?** → Read [SECURITY.md](SECURITY.md)
+- 🔒 **Security Info?** → Review [SECURITY.md](SECURITY.md)
 
 ---
 
@@ -161,7 +174,7 @@ We provide comprehensive documentation to help you get started:
 - HTTPS/SSL certificate for production
 - Linux/Unix server environment
 - At least 512 MB RAM
-- Cron job for peer cleanup
+- **Cron job for tracker maintenance** (updates stats every 15-30 minutes)
 
 ---
 
