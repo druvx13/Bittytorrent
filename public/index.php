@@ -275,6 +275,32 @@ try {
         $controller = new AdminController();
         $controller->deleteCategory();
     });
+
+    // External trackers
+    $router->get('/admin/external-trackers', function () {
+        $controller = new AdminController();
+        $controller->externalTrackers();
+    });
+
+    $router->post('/admin/external-trackers/add', function () {
+        $controller = new AdminController();
+        $controller->addExternalTracker();
+    });
+
+    $router->post('/admin/external-trackers/edit', function () {
+        $controller = new AdminController();
+        $controller->editExternalTracker();
+    });
+
+    $router->post('/admin/external-trackers/delete', function () {
+        $controller = new AdminController();
+        $controller->deleteExternalTracker();
+    });
+
+    $router->post('/admin/external-trackers/scrape', function () {
+        $controller = new AdminController();
+        $controller->scrapeNow();
+    });
     
     // Torrents
     $router->get('/browse', function () {

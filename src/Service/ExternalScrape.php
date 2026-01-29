@@ -40,6 +40,12 @@ class ExternalScrape
         }
 
         try {
+            // Check if UDP tracker
+            if (str_starts_with($scrapeUrl, 'udp://')) {
+                return $this->scrapeUdpTracker($scrapeUrl, $infoHashes);
+            }
+
+            // HTTP/HTTPS scraping
             // Build scrape URL with info_hash parameters
             $url = $scrapeUrl;
             $separator = str_contains($url, '?') ? '&' : '?';
@@ -342,5 +348,38 @@ class ExternalScrape
         }
 
         throw new \Exception("Invalid bencode data at position $pos");
+    }
+
+    /**
+     * Scrape UDP tracker
+     *
+     * @param string $scrapeUrl UDP tracker URL
+     * @param array $infoHashes Array of info hashes
+     * @return array Results keyed by info hash
+     */
+    private function scrapeUdpTracker(string $scrapeUrl, array $infoHashes): array
+    {
+        try {
+            $udpScraper = new UdpScraper($this->timeout);
+            $results = [];
+
+            foreach ($udpScraper->scrape($scrapeUrl, $infoHashes) as $hash => $data) {
+                if ($data !== false) {
+                    $results[$hash] = [
+                        'seeders' => $data['seeders'],
+                        'leechers' => $data['leechers'],
+                        'completed' => $data['completed']
+                    ];
+                }
+            }
+
+            return $results;
+
+        } catch (\Exception $e) {
+            $this->logger->error("UDP scrape failed: " . $e->getMessage(), [
+                'url' => $scrapeUrl
+            ]);
+            return [];
+        }
     }
 }

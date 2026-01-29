@@ -54,12 +54,77 @@ class TorrentParser
                 'name' => $info['name'] ?? 'Unknown',
                 'size' => $size,
                 'announce' => $decoded['announce'] ?? null,
+                'announce_list' => $decoded['announce-list'] ?? [],
                 'created_by' => $decoded['created by'] ?? null,
                 'creation_date' => $decoded['creation date'] ?? null,
             ];
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * Extract all tracker URLs from parsed torrent data
+     *
+     * @param array $parsedData Torrent metadata from parse()
+     * @return array List of unique tracker URLs
+     */
+    public function extractTrackerUrls(array $parsedData): array
+    {
+        $trackers = [];
+
+        // Add main announce URL
+        if (!empty($parsedData['announce'])) {
+            $trackers[] = $parsedData['announce'];
+        }
+
+        // Add announce-list URLs
+        if (!empty($parsedData['announce_list']) && is_array($parsedData['announce_list'])) {
+            foreach ($parsedData['announce_list'] as $tier) {
+                if (is_array($tier)) {
+                    foreach ($tier as $url) {
+                        if (is_string($url) && !empty($url)) {
+                            $trackers[] = $url;
+                        }
+                    }
+                } elseif (is_string($tier) && !empty($tier)) {
+                    $trackers[] = $tier;
+                }
+            }
+        }
+
+        // Remove duplicates and filter
+        $trackers = array_unique($trackers);
+        
+        // Filter out our own tracker
+        $trackers = array_filter($trackers, function($url) {
+            // Don't scrape ourselves
+            return !str_contains($url, $_SERVER['HTTP_HOST'] ?? '');
+        });
+
+        return array_values($trackers);
+    }
+
+    /**
+     * Convert tracker announce URL to scrape URL
+     *
+     * @param string $announceUrl Announce URL
+     * @return string|null Scrape URL or null if can't convert
+     */
+    public function convertToScrapeUrl(string $announceUrl): ?string
+    {
+        // HTTP/HTTPS trackers
+        if (preg_match('%^(https?://.*?/)announce([^/]*)$%i', $announceUrl, $m)) {
+            return $m[1] . 'scrape' . $m[2];
+        }
+
+        // UDP trackers - just return as-is (no /announce suffix usually)
+        if (str_starts_with($announceUrl, 'udp://')) {
+            // Remove /announce if present
+            return preg_replace('%/announce$%i', '', $announceUrl);
+        }
+
+        return null;
     }
     
     /**
