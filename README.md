@@ -81,19 +81,21 @@ Bittytorrent is a **modern, secure PHP BitTorrent tracker** that allows you to d
 
 - PHP 8.1 or higher
 - MySQL 5.7+ or MariaDB 10.2+
-- Composer
+- ~~Composer~~ **NOT NEEDED!** ✅ Dependencies included
 - Web server (Apache with mod_rewrite OR Nginx)
-- Basic command line knowledge
+- Basic command line knowledge (optional)
 
-### Installation (5 minutes)
+### Installation (3 minutes)
+
+**🎉 No Composer Required - Dependencies Included!**
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/druvx13/Bittytorrent.git
 cd Bittytorrent
 
-# 2. Install dependencies
-composer install --no-dev --optimize-autoloader
+# 2. ~~Install dependencies~~ (SKIP - already included!)
+# composer install --no-dev --optimize-autoloader
 
 # 3. Configure environment
 cp .env.example .env
@@ -124,9 +126,11 @@ cd public && php -S localhost:8000
 
 We provide comprehensive documentation to help you get started:
 
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - **NEW!** Complete production deployment guide (all hosting types)
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete beginner's guide with detailed explanations
 - **[SETUP.md](SETUP.md)** - Detailed installation and configuration guide
 - **[INSTALL.md](INSTALL.md)** - Quick deployment reference
+- **[VENDOR_MANAGEMENT.md](VENDOR_MANAGEMENT.md)** - **NEW!** Managing dependencies
 - **[SECURITY.md](SECURITY.md)** - Security features and best practices
 - **[PHP8_COMPATIBILITY.md](PHP8_COMPATIBILITY.md)** - PHP 8+ compatibility verification
 
