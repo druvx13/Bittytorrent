@@ -3,7 +3,7 @@
         'name' => 'bittytorrent/bittytorrent',
         'pretty_version' => 'dev-copilot/build-bittorrent-tracker-app',
         'version' => 'dev-copilot/build-bittorrent-tracker-app',
-        'reference' => '2c8e3671003616cf69d0b195cfe35bd7e6acd589',
+        'reference' => 'f799de06ee5183b57fd8694f77ba8524890e6de5',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'bittytorrent/bittytorrent' => array(
             'pretty_version' => 'dev-copilot/build-bittorrent-tracker-app',
             'version' => 'dev-copilot/build-bittorrent-tracker-app',
-            'reference' => '2c8e3671003616cf69d0b195cfe35bd7e6acd589',
+            'reference' => 'f799de06ee5183b57fd8694f77ba8524890e6de5',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
