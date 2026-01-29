@@ -268,7 +268,12 @@ class Tracker
         if ($compact) {
             $compactPeers = '';
             foreach ($peers as $peer) {
-                $compactPeers .= pack('Nn', ip2long($peer['ip']), $peer['port']);
+                // Validate IPv4 address
+                $ipLong = ip2long($peer['ip']);
+                if ($ipLong === false) {
+                    continue; // Skip invalid IPs
+                }
+                $compactPeers .= pack('Nn', $ipLong, $peer['port']);
             }
             $response['peers'] = $compactPeers;
         } else {
@@ -280,7 +285,10 @@ class Tracker
                 ];
                 
                 if (!$noPeerId) {
-                    $peerData['peer id'] = hex2bin($peer['peer_id']);
+                    // Validate hex string before converting
+                    if (ctype_xdigit($peer['peer_id']) && strlen($peer['peer_id']) === 40) {
+                        $peerData['peer id'] = hex2bin($peer['peer_id']);
+                    }
                 }
                 
                 $peerList[] = $peerData;
@@ -331,6 +339,6 @@ class Tracker
             }
         }
         
-        return '';
+        throw new \InvalidArgumentException('Cannot bencode unsupported data type: ' . gettype($data));
     }
 }

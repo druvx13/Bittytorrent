@@ -150,11 +150,29 @@ class TorrentController extends BaseController
         // Save torrent file
         $uploadsDir = __DIR__ . '/../../public/uploads';
         if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0755, true);
+            if (!mkdir($uploadsDir, 0755, true)) {
+                $this->render('torrent/upload.twig', [
+                    'title' => 'Upload Torrent',
+                    'error' => 'Failed to create uploads directory.',
+                ]);
+                return;
+            }
         }
         
         $filename = $parsedData['info_hash'] . '.torrent';
         $destination = $uploadsDir . '/' . $filename;
+        
+        // Validate destination path to prevent directory traversal
+        $realUploadsDir = realpath($uploadsDir);
+        $realDestination = realpath(dirname($destination)) . '/' . basename($destination);
+        
+        if ($realUploadsDir === false || strpos($realDestination, $realUploadsDir) !== 0) {
+            $this->render('torrent/upload.twig', [
+                'title' => 'Upload Torrent',
+                'error' => 'Invalid file path.',
+            ]);
+            return;
+        }
         
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
             $this->render('torrent/upload.twig', [
@@ -215,7 +233,9 @@ class TorrentController extends BaseController
         }
         
         header('Content-Type: application/x-bittorrent');
-        header('Content-Disposition: attachment; filename="' . $torrent['slug'] . '.torrent"');
+        // Sanitize filename to prevent header injection
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $torrent['slug']);
+        header('Content-Disposition: attachment; filename="' . $safeFilename . '.torrent"');
         header('Content-Length: ' . filesize($filepath));
         
         readfile($filepath);

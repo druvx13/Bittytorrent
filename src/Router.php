@@ -99,7 +99,8 @@ class Router
         // Escape forward slashes
         $pattern = str_replace('/', '\/', $path);
         
-        // Convert :param to regex group
+        // Convert :id to numeric regex group, :slug to alphanumeric
+        $pattern = preg_replace('/\:id/', '([0-9]+)', $pattern);
         $pattern = preg_replace('/\:([a-zA-Z0-9_]+)/', '([a-zA-Z0-9_-]+)', $pattern);
         
         return '#^' . $pattern . '$#';

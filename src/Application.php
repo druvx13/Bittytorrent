@@ -138,7 +138,10 @@ class Application
     {
         if (session_status() === PHP_SESSION_NONE) {
             ini_set('session.cookie_httponly', '1');
-            ini_set('session.cookie_secure', '0'); // Set to '1' when HTTPS is enabled
+            // Set cookie_secure based on HTTPS detection
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+                       || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+            ini_set('session.cookie_secure', $isHttps ? '1' : '0');
             ini_set('session.cookie_samesite', 'Strict');
             ini_set('session.use_strict_mode', '1');
             ini_set('session.gc_maxlifetime', (string)$this->config['session_lifetime']);

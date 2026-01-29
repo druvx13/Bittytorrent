@@ -116,6 +116,18 @@ class Torrent
         $orderBy = $filters['order_by'] ?? 'created_at';
         $direction = $filters['direction'] ?? 'DESC';
         
+        // Whitelist allowed orderBy columns
+        $allowedOrderBy = ['created_at', 'title', 'size_bytes', 'views', 'seeders', 'leechers'];
+        if (!in_array($orderBy, $allowedOrderBy)) {
+            $orderBy = 'created_at';
+        }
+        
+        // Validate direction
+        $direction = strtoupper($direction);
+        if (!in_array($direction, ['ASC', 'DESC'])) {
+            $direction = 'DESC';
+        }
+        
         $sql = "
             SELECT t.*, u.username, c.name as category_name, c.slug as category_slug
             FROM torrents t

@@ -138,7 +138,7 @@ class AuthController extends BaseController
         if (!empty($errors)) {
             $this->render('auth/register.twig', [
                 'title' => 'Register',
-                'error' => implode('<br>', $errors),
+                'error' => $errors,
                 'username' => $username,
                 'email' => $email,
             ]);
@@ -191,6 +191,11 @@ class AuthController extends BaseController
      */
     public function logout(): void
     {
+        // Ensure session is started before destroying
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
         $userId = $_SESSION['user_id'] ?? null;
         $username = $_SESSION['username'] ?? null;
         

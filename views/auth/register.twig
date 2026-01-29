@@ -10,7 +10,15 @@
             <div class="card-body">
                 {% if error %}
                 <div class="alert alert-danger" role="alert">
-                    {{ error|raw }}
+                    {% if error is iterable %}
+                        <ul class="mb-0">
+                        {% for err in error %}
+                            <li>{{ err }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        {{ error }}
+                    {% endif %}
                 </div>
                 {% endif %}
                 
