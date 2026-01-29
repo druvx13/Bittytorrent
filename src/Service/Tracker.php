@@ -149,10 +149,20 @@ class Tracker
      */
     private function updatePeer(string $infoHash, string $peerId, string $ip, int $port, int $uploaded, int $downloaded, int $left, bool $isSeeder, string $userAgent): void
     {
+        // MySQL-compatible INSERT ... ON DUPLICATE KEY UPDATE
         $stmt = $this->db->prepare("
-            INSERT OR REPLACE INTO peers 
+            INSERT INTO peers 
             (info_hash, peer_id, ip, port, uploaded, downloaded, remaining, is_seeder, user_agent, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            ip = VALUES(ip),
+            port = VALUES(port),
+            uploaded = VALUES(uploaded),
+            downloaded = VALUES(downloaded),
+            remaining = VALUES(remaining),
+            is_seeder = VALUES(is_seeder),
+            user_agent = VALUES(user_agent),
+            updated_at = VALUES(updated_at)
         ");
         
         $stmt->execute([
@@ -167,6 +177,9 @@ class Tracker
             $userAgent,
             time()
         ]);
+        
+        // Update torrent stats after peer update
+        $this->updateTorrentStats($infoHash);
     }
     
     /**
@@ -176,6 +189,9 @@ class Tracker
     {
         $stmt = $this->db->prepare("DELETE FROM peers WHERE info_hash = ? AND peer_id = ?");
         $stmt->execute([$infoHash, $peerId]);
+        
+        // Update torrent stats after peer removal
+        $this->updateTorrentStats($infoHash);
     }
     
     /**
@@ -234,15 +250,69 @@ class Tracker
     }
     
     /**
+     * Update torrent statistics from peers table
+     */
+    private function updateTorrentStats(string $infoHash): void
+    {
+        $stmt = $this->db->prepare("
+            UPDATE torrents SET
+                seeders = (SELECT COUNT(*) FROM peers WHERE info_hash = ? AND is_seeder = 1),
+                leechers = (SELECT COUNT(*) FROM peers WHERE info_hash = ? AND is_seeder = 0),
+                last_scrape = ?
+            WHERE info_hash = ?
+        ");
+        
+        $now = time();
+        $stmt->execute([$infoHash, $infoHash, $now, $infoHash]);
+    }
+    
+    /**
+     * Update all torrent statistics
+     */
+    public function updateAllTorrentStats(): int
+    {
+        // Get all torrents with peers
+        $stmt = $this->db->query("SELECT DISTINCT info_hash FROM peers");
+        $infoHashes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $count = 0;
+        foreach ($infoHashes as $infoHash) {
+            $this->updateTorrentStats($infoHash);
+            $count++;
+        }
+        
+        // Set seeders/leechers to 0 for torrents with no peers
+        $this->db->exec("
+            UPDATE torrents SET seeders = 0, leechers = 0 
+            WHERE info_hash NOT IN (SELECT DISTINCT info_hash FROM peers)
+        ");
+        
+        return $count;
+    }
+    
+    /**
      * Clean old peers
      */
     public function cleanOldPeers(): int
     {
         $timeout = time() - ($this->app->getConfig('announce_interval') * 2);
+        
+        // Get affected torrents before deletion
+        $stmt = $this->db->prepare("SELECT DISTINCT info_hash FROM peers WHERE updated_at < ?");
+        $stmt->execute([$timeout]);
+        $affectedTorrents = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Delete old peers
         $stmt = $this->db->prepare("DELETE FROM peers WHERE updated_at < ?");
         $stmt->execute([$timeout]);
+        $deletedCount = $stmt->rowCount();
         
-        return $stmt->rowCount();
+        // Update stats for affected torrents
+        foreach ($affectedTorrents as $infoHash) {
+            $this->updateTorrentStats($infoHash);
+        }
+        
+        return $deletedCount;
     }
     
     /**

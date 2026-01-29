@@ -139,6 +139,7 @@ class TorrentController extends BaseController
             'title' => $torrent['title'],
             'torrent' => $torrent,
             'peer_stats' => $peerStats,
+            'app_url' => $this->app->getConfig('app_url'),
         ]);
     }
     

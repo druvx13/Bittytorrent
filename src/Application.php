@@ -68,6 +68,7 @@ class Application
             'session_name' => $_ENV['SESSION_NAME'] ?? 'bittytorrent_session',
             'session_lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 7200),
             'tracker_open' => filter_var($_ENV['TRACKER_OPEN'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'full_scrape' => filter_var($_ENV['FULL_SCRAPE'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'announce_interval' => (int)($_ENV['ANNOUNCE_INTERVAL'] ?? 1800),
             'min_interval' => (int)($_ENV['MIN_INTERVAL'] ?? 900),
             'default_peers' => (int)($_ENV['DEFAULT_PEERS'] ?? 50),

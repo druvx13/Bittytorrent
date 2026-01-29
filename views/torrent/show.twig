@@ -53,6 +53,28 @@
                     </div>
                 </div>
                 
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6>Tracker Announce URL:</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="announceUrl" value="{{ app_url }}/announce" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyAnnounceUrl()">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <small class="text-muted">Use this URL in your BitTorrent client to track this torrent</small>
+                    </div>
+                </div>
+                
+                <script>
+                function copyAnnounceUrl() {
+                    const input = document.getElementById('announceUrl');
+                    input.select();
+                    document.execCommand('copy');
+                    alert('Announce URL copied to clipboard!');
+                }
+                </script>
+                
                 {% if torrent.description %}
                 <div class="row mb-3">
                     <div class="col-md-12">
@@ -79,11 +101,11 @@
             <div class="list-group list-group-flush">
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-arrow-up text-success"></i> Seeders</span>
-                    <span class="badge bg-success">{{ peer_stats.seeders|default(0) }}</span>
+                    <span class="badge bg-success">{{ torrent.seeders|default(0) }}</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-arrow-down text-warning"></i> Leechers</span>
-                    <span class="badge bg-warning">{{ peer_stats.leechers|default(0) }}</span>
+                    <span class="badge bg-warning">{{ torrent.leechers|default(0) }}</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-check-circle text-info"></i> Completed</span>
@@ -93,6 +115,11 @@
                     <span><i class="bi bi-eye"></i> Views</span>
                     <span class="badge bg-secondary">{{ torrent.views|default(0) }}</span>
                 </div>
+                {% if torrent.last_scrape %}
+                <div class="list-group-item">
+                    <small class="text-muted">Last updated: {{ torrent.last_scrape|date('Y-m-d H:i') }}</small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
