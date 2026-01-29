@@ -82,17 +82,9 @@ try {
     
     echo "Executing schema...\n";
     
-    // Split schema into individual statements and execute them
-    $statements = array_filter(
-        array_map('trim', explode(';', $schema)),
-        fn($stmt) => !empty($stmt) && !preg_match('/^\s*--/', $stmt)
-    );
-    
-    foreach ($statements as $statement) {
-        if (!empty($statement)) {
-            $pdo->exec($statement);
-        }
-    }
+    // Execute the entire schema at once
+    // MySQL supports executing multiple statements in one query
+    $pdo->exec($schema);
     
     echo "\n✓ Database initialized successfully!\n\n";
     
