@@ -1,0 +1,16 @@
+# Disable directory listing
+Options -Indexes
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Redirect all requests to index.php except actual files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Protect sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

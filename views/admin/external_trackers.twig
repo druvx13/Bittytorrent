@@ -1,0 +1,224 @@
+{% extends "layout/base.twig" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-globe"></i> External Trackers
+                </h1>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTrackerModal">
+                    <i class="bi bi-plus-circle"></i> Add Tracker
+                </button>
+            </div>
+
+            {% if success_msg %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ success_msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            {% if error_msg %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ error_msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">About External Scraping</h5>
+                </div>
+                <div class="card-body">
+                    <p>External scraping allows fetching statistics from other BitTorrent trackers to get comprehensive peer counts for torrents tracked on multiple trackers.</p>
+                    <ul>
+                        <li><strong>Automatic:</strong> Set up cron: <code>0 */2 * * * php bin/external-scrape.php</code></li>
+                        <li><strong>Manual:</strong> Click "Scrape Now" button below</li>
+                        <li><strong>Privacy:</strong> Only sends info_hash (no personal data)</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if trackers|length > 0 %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Configured Trackers ({{ trackers|length }})</h5>
+                    <form method="post" action="/admin/external-trackers/scrape" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Start scraping all torrents from all enabled trackers?')">
+                            <i class="bi bi-arrow-clockwise"></i> Scrape Now
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Scrape URL</th>
+                                    <th>Status</th>
+                                    <th>Stats</th>
+                                    <th>Success Rate</th>
+                                    <th>Last Scrape</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tracker in trackers %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ tracker.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ tracker.scrape_url }}</small>
+                                    </td>
+                                    <td>
+                                        {% if tracker.enabled %}
+                                        <span class="badge bg-success">Enabled</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Disabled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            Scrapes: {{ tracker.scrape_count }}<br>
+                                            <span class="text-success">✓ {{ tracker.success_count }}</span> / 
+                                            <span class="text-danger">✗ {{ tracker.fail_count }}</span>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if tracker.scrape_count > 0 %}
+                                        <span class="badge {{ tracker.success_rate >= 80 ? 'bg-success' : (tracker.success_rate >= 50 ? 'bg-warning' : 'bg-danger') }}">
+                                            {{ tracker.success_rate }}%
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if tracker.last_scrape > 0 %}
+                                        <small class="text-muted">{{ tracker.last_scrape|date('Y-m-d H:i') }}</small>
+                                        {% else %}
+                                        <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editTrackerModal{{ tracker.id }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger"
+                                                    onclick="deleteTracker({{ tracker.id }}, '{{ tracker.name }}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Edit Modal for this tracker -->
+                                <div class="modal fade" id="editTrackerModal{{ tracker.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="post" action="/admin/external-trackers/edit">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <input type="hidden" name="id" value="{{ tracker.id }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Edit Tracker</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Name</label>
+                                                        <input type="text" name="name" class="form-control" value="{{ tracker.name }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Scrape URL</label>
+                                                        <input type="url" name="scrape_url" class="form-control" value="{{ tracker.scrape_url }}" required>
+                                                        <small class="text-muted">Example: http://tracker.example.com/scrape</small>
+                                                    </div>
+                                                    <div class="mb-3 form-check">
+                                                        <input type="checkbox" name="enabled" class="form-check-input" id="enabled{{ tracker.id }}" {{ tracker.enabled ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="enabled{{ tracker.id }}">
+                                                            Enabled
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary">Update Tracker</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <h5><i class="bi bi-info-circle"></i> No External Trackers Configured</h5>
+                <p>Add external trackers to start scraping statistics from other BitTorrent trackers.</p>
+                <p class="mb-0"><strong>Popular trackers to add:</strong></p>
+                <ul>
+                    <li>OpenBitTorrent: <code>http://tracker.openbittorrent.com/scrape</code></li>
+                    <li>PublicBT: <code>http://tracker.publicbt.com/scrape</code></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Tracker Modal -->
+<div class="modal fade" id="addTrackerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/admin/external-trackers/add">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add External Tracker</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g., OpenBitTorrent" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scrape URL</label>
+                        <input type="url" name="scrape_url" class="form-control" placeholder="http://tracker.example.com/scrape" required>
+                        <small class="text-muted">Must be the scrape endpoint URL, not the announce URL</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Tracker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form (hidden) -->
+<form id="deleteForm" method="post" action="/admin/external-trackers/delete" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="id" id="deleteId">
+</form>
+
+<script>
+function deleteTracker(id, name) {
+    if (confirm('Are you sure you want to delete tracker "' + name + '"?')) {
+        document.getElementById('deleteId').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

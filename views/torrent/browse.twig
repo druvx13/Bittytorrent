@@ -1,0 +1,157 @@
+{% extends 'layout/base.twig' %}
+
+{% block title %}Browse Torrents{% if category %} - {{ category.name }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Categories</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/browse" class="list-group-item list-group-item-action{% if not category %} active{% endif %}">
+                        All Categories
+                    </a>
+                    {% for cat in categories %}
+                        <a href="/browse/category/{{ cat.id }}" class="list-group-item list-group-item-action{% if category and category.id == cat.id %} active{% endif %}">
+                            {{ cat.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Search</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="/browse">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" name="q" placeholder="Search torrents..." value="{{ search_query }}">
+                        </div>
+                        {% if category %}
+                            <input type="hidden" name="category" value="{{ category.id }}">
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Search</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        {% if search_query %}
+                            Search Results for "{{ search_query }}"
+                        {% elseif category %}
+                            {{ category.name }}
+                        {% else %}
+                            All Torrents
+                        {% endif %}
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="?sort=name&order={{ order == 'ASC' ? 'DESC' : 'ASC' }}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-outline-secondary{% if sort == 'name' %} active{% endif %}">Name</a>
+                        <a href="?sort=created_at&order=DESC{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-outline-secondary{% if sort == 'created_at' %} active{% endif %}">Date</a>
+                        <a href="?sort=seeders&order=DESC{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-outline-secondary{% if sort == 'seeders' %} active{% endif %}">Seeds</a>
+                        <a href="?sort=size&order=DESC{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-outline-secondary{% if sort == 'size' %} active{% endif %}">Size</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if torrents|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th class="text-center">Category</th>
+                                        <th class="text-center">Size</th>
+                                        <th class="text-center">Seeds</th>
+                                        <th class="text-center">Leeches</th>
+                                        <th class="text-center">Completed</th>
+                                        <th>Uploaded</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for torrent in torrents %}
+                                        <tr>
+                                            <td>
+                                                <a href="/torrent/{{ torrent.id }}" class="text-decoration-none">
+                                                    {{ torrent.name }}
+                                                </a>
+                                                <br>
+                                                <small class="text-muted">by 
+                                                    <a href="/user/{{ torrent.user_id }}">{{ torrent.username }}</a>
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ torrent.category_name }}</span>
+                                            </td>
+                                            <td class="text-center">{{ torrent.size_formatted }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ torrent.seeders }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning">{{ torrent.leechers }}</span>
+                                            </td>
+                                            <td class="text-center">{{ torrent.completed }}</td>
+                                            <td>
+                                                <small>{{ torrent.created_at }}</small>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Pagination #}
+                        {% if total_pages > 1 %}
+                            <nav aria-label="Torrent pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if current_page > 1 %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ current_page - 1 }}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort %}&sort={{ sort }}&order={{ order }}{% endif %}">Previous</a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for page in 1..total_pages %}
+                                        {% if page == current_page %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page }}</span>
+                                            </li>
+                                        {% elseif page == 1 or page == total_pages or (page >= current_page - 2 and page <= current_page + 2) %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page }}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort %}&sort={{ sort }}&order={{ order }}{% endif %}">{{ page }}</a>
+                                            </li>
+                                        {% elseif page == current_page - 3 or page == current_page + 3 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if current_page < total_pages %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ current_page + 1 }}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort %}&sort={{ sort }}&order={{ order }}{% endif %}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            No torrents found.
+                            {% if search_query %}
+                                Try a different search term.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

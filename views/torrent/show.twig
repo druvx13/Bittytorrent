@@ -1,0 +1,132 @@
+{% extends "layout/base.twig" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-file-earmark"></i> {{ torrent.title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Category:</h6>
+                        {% if torrent.category_name %}
+                        <span class="badge bg-secondary">{{ torrent.category_name }}</span>
+                        {% else %}
+                        <span class="text-muted">Uncategorized</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Uploader:</h6>
+                        <span>{{ torrent.username|default('Anonymous') }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Size:</h6>
+                        {% if torrent.size_bytes > 0 %}
+                            {% if torrent.size_bytes > 1073741824 %}
+                                {{ (torrent.size_bytes / 1073741824)|number_format(2) }} GB
+                            {% elseif torrent.size_bytes > 1048576 %}
+                                {{ (torrent.size_bytes / 1048576)|number_format(2) }} MB
+                            {% else %}
+                                {{ (torrent.size_bytes / 1024)|number_format(2) }} KB
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Uploaded:</h6>
+                        <span>{{ torrent.created_at|date('Y-m-d H:i') }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6>Info Hash:</h6>
+                        <code>{{ torrent.info_hash }}</code>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6>Tracker Announce URL:</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="announceUrl" value="{{ app_url }}/announce" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyAnnounceUrl()">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <small class="text-muted">Use this URL in your BitTorrent client to track this torrent</small>
+                    </div>
+                </div>
+                
+                <script>
+                function copyAnnounceUrl() {
+                    const input = document.getElementById('announceUrl');
+                    input.select();
+                    document.execCommand('copy');
+                    alert('Announce URL copied to clipboard!');
+                }
+                </script>
+                
+                {% if torrent.description %}
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6>Description:</h6>
+                        <p>{{ torrent.description|nl2br }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2">
+                    <a href="/download/{{ torrent.id }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-download"></i> Download Torrent
+                    </a>
+                    {% if user and (user.id == torrent.user_id or user.role == 'admin') %}
+                    <a href="/torrent/{{ torrent.id }}/edit" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit Torrent
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Statistics</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-arrow-up text-success"></i> Seeders</span>
+                    <span class="badge bg-success">{{ torrent.seeders|default(0) }}</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-arrow-down text-warning"></i> Leechers</span>
+                    <span class="badge bg-warning">{{ torrent.leechers|default(0) }}</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-check-circle text-info"></i> Completed</span>
+                    <span class="badge bg-info">{{ torrent.completed|default(0) }}</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-eye"></i> Views</span>
+                    <span class="badge bg-secondary">{{ torrent.views|default(0) }}</span>
+                </div>
+                {% if torrent.last_scrape %}
+                <div class="list-group-item">
+                    <small class="text-muted">Last updated: {{ torrent.last_scrape|date('Y-m-d H:i') }}</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
