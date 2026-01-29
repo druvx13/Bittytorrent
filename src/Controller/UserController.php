@@ -42,7 +42,7 @@ class UserController extends BaseController
         
         // Format sizes
         foreach ($torrents as &$torrent) {
-            $torrent['size_formatted'] = $this->formatBytes($torrent['size']);
+            $torrent['size_formatted'] = $this->formatBytes((int)$torrent['size_bytes']);
         }
         
         // Get torrent count

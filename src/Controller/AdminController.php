@@ -197,7 +197,6 @@ class AdminController extends BaseController
             'title' => 'Manage Categories',
             'categories' => $categories,
             'edit_category' => $editCategory,
-            'csrf_token' => $this->generateCSRFToken(),
             'success' => $_SESSION['success_msg'] ?? null,
             'error' => $_SESSION['error_msg'] ?? null,
         ]);
