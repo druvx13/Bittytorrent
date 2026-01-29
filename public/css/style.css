@@ -1,0 +1,47 @@
+/* Custom Styles for Bittytorrent */
+
+:root {
+    --bs-primary-rgb: 13, 110, 253;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.875rem;
+}
+
+.card {
+    border: none;
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Make search form responsive */
+@media (max-width: 991px) {
+    .navbar .d-flex {
+        margin-top: 1rem;
+        width: 100%;
+    }
+}

@@ -1,0 +1,46 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+/logs/*.log
+!/logs/.gitkeep
+
+# Cache
+/libs/cache/*
+!/libs/cache/.gitkeep
+/var/cache/*
+!/var/cache/.gitkeep
+
+# SQLite database (for development)
+*.sqlite
+*.db
+
+# Uploaded files (for development)
+/public/uploads/*
+!/public/uploads/.gitkeep
+/uploads/*
+!/uploads/.gitkeep
+
+# Compiled assets
+/public/build/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~

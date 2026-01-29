@@ -1,0 +1,153 @@
+{% extends "layout/base.twig" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="bi bi-cloud-download"></i> Torrent Tracker
+        </h1>
+        
+        <!-- Category Filter -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Filter by Category</h5>
+                <div class="btn-group flex-wrap" role="group">
+                    <a href="/" class="btn btn-sm btn-outline-primary {% if not selected_category %}active{% endif %}">
+                        All Categories
+                    </a>
+                    {% for category in categories %}
+                    <a href="/?category={{ category.id }}" class="btn btn-sm btn-outline-primary {% if selected_category == category.id %}active{% endif %}">
+                        {{ category.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Torrents List -->
+        {% if torrents|length > 0 %}
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list"></i> 
+                    {% if search %}
+                        Search Results for "{{ search }}"
+                    {% else %}
+                        Recent Torrents
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Size</th>
+                            <th>Seeders</th>
+                            <th>Leechers</th>
+                            <th>Uploader</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for torrent in torrents %}
+                        <tr>
+                            <td>
+                                <a href="/torrent/{{ torrent.id }}" class="text-decoration-none">
+                                    <i class="bi bi-file-earmark"></i>
+                                    <strong>{{ torrent.title }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                {% if torrent.category_name %}
+                                <span class="badge bg-secondary">{{ torrent.category_name }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if torrent.size_bytes > 0 %}
+                                    {% if torrent.size_bytes > 1073741824 %}
+                                        {{ (torrent.size_bytes / 1073741824)|number_format(2) }} GB
+                                    {% elseif torrent.size_bytes > 1048576 %}
+                                        {{ (torrent.size_bytes / 1048576)|number_format(2) }} MB
+                                    {% else %}
+                                        {{ (torrent.size_bytes / 1024)|number_format(2) }} KB
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-arrow-up"></i> {{ torrent.seeders|default(0) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-arrow-down"></i> {{ torrent.leechers|default(0) }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ torrent.username|default('Anonymous') }}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ torrent.created_at|date('Y-m-d H:i') }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <div class="card-footer">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="/?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                Previous
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for p in 1..total_pages %}
+                            {% if p >= page - 2 and p <= page + 2 %}
+                            <li class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link" href="/?page={{ p }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="/?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                                Next
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            {% if search %}
+                No torrents found matching your search.
+            {% else %}
+                No torrents available yet. Be the first to <a href="/upload">upload one</a>!
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
