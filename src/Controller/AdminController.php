@@ -314,4 +314,163 @@ class AdminController extends BaseController
         header('Location: /admin/categories');
         exit;
     }
+
+    /**
+     * List external trackers
+     */
+    public function externalTrackers(): void
+    {
+        $this->requireAdmin();
+
+        // Get all external trackers
+        $stmt = $this->app->getDatabase()->query("
+            SELECT * FROM external_trackers 
+            ORDER BY enabled DESC, name ASC
+        ");
+        $trackers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Calculate success rates
+        foreach ($trackers as &$tracker) {
+            if ($tracker['scrape_count'] > 0) {
+                $tracker['success_rate'] = round(($tracker['success_count'] / $tracker['scrape_count']) * 100, 1);
+            } else {
+                $tracker['success_rate'] = 0;
+            }
+        }
+
+        $this->render('admin/external_trackers.twig', [
+            'title' => 'External Trackers',
+            'trackers' => $trackers,
+        ]);
+    }
+
+    /**
+     * Add external tracker
+     */
+    public function addExternalTracker(): void
+    {
+        $this->requireAdmin();
+        $this->validateCsrfToken();
+
+        $name = trim($_POST['name'] ?? '');
+        $scrapeUrl = trim($_POST['scrape_url'] ?? '');
+
+        if (empty($name) || empty($scrapeUrl)) {
+            $_SESSION['error_msg'] = 'Name and scrape URL are required';
+            header('Location: /admin/external-trackers');
+            exit;
+        }
+
+        try {
+            $stmt = $this->app->getDatabase()->prepare("
+                INSERT INTO external_trackers (name, scrape_url, enabled, created_at, updated_at)
+                VALUES (?, ?, 1, ?, ?)
+            ");
+            $now = time();
+            $stmt->execute([$name, $scrapeUrl, $now, $now]);
+
+            $_SESSION['success_msg'] = 'External tracker added successfully';
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error adding tracker: ' . $e->getMessage();
+        }
+
+        header('Location: /admin/external-trackers');
+        exit;
+    }
+
+    /**
+     * Edit external tracker
+     */
+    public function editExternalTracker(): void
+    {
+        $this->requireAdmin();
+        $this->validateCsrfToken();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $scrapeUrl = trim($_POST['scrape_url'] ?? '');
+        $enabled = isset($_POST['enabled']) ? 1 : 0;
+
+        if (!$id || empty($name) || empty($scrapeUrl)) {
+            $_SESSION['error_msg'] = 'Invalid tracker data';
+            header('Location: /admin/external-trackers');
+            exit;
+        }
+
+        try {
+            $stmt = $this->app->getDatabase()->prepare("
+                UPDATE external_trackers 
+                SET name = ?, scrape_url = ?, enabled = ?, updated_at = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $scrapeUrl, $enabled, time(), $id]);
+
+            $_SESSION['success_msg'] = 'External tracker updated successfully';
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error updating tracker: ' . $e->getMessage();
+        }
+
+        header('Location: /admin/external-trackers');
+        exit;
+    }
+
+    /**
+     * Delete external tracker
+     */
+    public function deleteExternalTracker(): void
+    {
+        $this->requireAdmin();
+        $this->validateCsrfToken();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        if (!$id) {
+            $_SESSION['error_msg'] = 'Invalid tracker ID';
+            header('Location: /admin/external-trackers');
+            exit;
+        }
+
+        try {
+            $stmt = $this->app->getDatabase()->prepare("
+                DELETE FROM external_trackers WHERE id = ?
+            ");
+            $stmt->execute([$id]);
+
+            $_SESSION['success_msg'] = 'External tracker deleted successfully';
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error deleting tracker: ' . $e->getMessage();
+        }
+
+        header('Location: /admin/external-trackers');
+        exit;
+    }
+
+    /**
+     * Manually trigger scrape
+     */
+    public function scrapeNow(): void
+    {
+        $this->requireAdmin();
+        $this->validateCsrfToken();
+
+        try {
+            $externalScrape = new \Bittytorrent\Service\ExternalScrape(
+                $this->app->getDatabase(),
+                $this->app->getLogger()
+            );
+
+            $stats = $externalScrape->scrapeAllTorrents();
+
+            $_SESSION['success_msg'] = sprintf(
+                'Scrape completed: %d torrents scraped, %d successes',
+                $stats['torrents_scraped'],
+                $stats['successes']
+            );
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error during scrape: ' . $e->getMessage();
+        }
+
+        header('Location: /admin/external-trackers');
+        exit;
+    }
 }
