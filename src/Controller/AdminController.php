@@ -29,7 +29,7 @@ class AdminController extends BaseController
             'total_users' => $userModel->count(),
             'total_torrents' => $torrentModel->count(),
             'recent_users' => $userModel->getAll(1, 5),
-            'recent_torrents' => $torrentModel->getAll(1, 5),
+            'recent_torrents' => $torrentModel->getAll([], 1, 5),
         ];
         
         $this->render('admin/dashboard.twig', [
@@ -73,7 +73,7 @@ class AdminController extends BaseController
         $perPage = 25;
         
         $torrentModel = new Torrent();
-        $torrents = $torrentModel->getAll($page, $perPage);
+        $torrents = $torrentModel->getAll([], $page, $perPage);
         $totalTorrents = $torrentModel->count();
         $totalPages = (int)ceil($totalTorrents / $perPage);
         
@@ -189,7 +189,7 @@ class AdminController extends BaseController
             FROM categories c
             LEFT JOIN torrents t ON c.id = t.category_id
             GROUP BY c.id
-            ORDER BY c.sort_order, c.name
+            ORDER BY c.position, c.name
         ");
         $categories = $stmt->fetchAll();
         
@@ -216,7 +216,7 @@ class AdminController extends BaseController
         
         $name = trim($_POST['name'] ?? '');
         $description = trim($_POST['description'] ?? '');
-        $sortOrder = (int)($_POST['sort_order'] ?? 0);
+        $position = (int)($_POST['position'] ?? 0);
         
         if (empty($name)) {
             $_SESSION['error_msg'] = 'Category name is required';
@@ -225,12 +225,12 @@ class AdminController extends BaseController
         }
         
         $stmt = $this->app->getDb()->prepare("
-            INSERT INTO categories (name, description, sort_order)
+            INSERT INTO categories (name, description, position)
             VALUES (?, ?, ?)
         ");
         
         try {
-            $stmt->execute([$name, $description, $sortOrder]);
+            $stmt->execute([$name, $description, $position]);
             $_SESSION['success_msg'] = 'Category added successfully';
         } catch (\Exception $e) {
             $_SESSION['error_msg'] = 'Error adding category: ' . $e->getMessage();
@@ -252,7 +252,7 @@ class AdminController extends BaseController
         $id = (int)($_POST['id'] ?? 0);
         $name = trim($_POST['name'] ?? '');
         $description = trim($_POST['description'] ?? '');
-        $sortOrder = (int)($_POST['sort_order'] ?? 0);
+        $position = (int)($_POST['position'] ?? 0);
         
         if (empty($name) || $id <= 0) {
             $_SESSION['error_msg'] = 'Invalid input';
@@ -261,11 +261,11 @@ class AdminController extends BaseController
         }
         
         $stmt = $this->app->getDb()->prepare("
-            UPDATE categories SET name = ?, description = ?, sort_order = ? WHERE id = ?
+            UPDATE categories SET name = ?, description = ?, position = ? WHERE id = ?
         ");
         
         try {
-            $stmt->execute([$name, $description, $sortOrder, $id]);
+            $stmt->execute([$name, $description, $position, $id]);
             $_SESSION['success_msg'] = 'Category updated successfully';
         } catch (\Exception $e) {
             $_SESSION['error_msg'] = 'Error updating category: ' . $e->getMessage();

@@ -59,10 +59,10 @@ class RSSController extends BaseController
         echo '  <atom:link href="' . htmlspecialchars($siteUrl . '/rss') . '" rel="self" type="application/rss+xml" />' . "\n";
         
         foreach ($torrents as $torrent) {
-            $title = htmlspecialchars($torrent['name']);
+            $title = htmlspecialchars($torrent['title'] ?? $torrent['name'] ?? 'Untitled');
             $link = htmlspecialchars($siteUrl . '/torrent/' . $torrent['id']);
             $description = htmlspecialchars($torrent['description'] ?? 'No description');
-            $pubDate = date('r', strtotime($torrent['created_at']));
+            $pubDate = date('r', (int)$torrent['created_at']); // created_at is unix timestamp
             $category = htmlspecialchars($torrent['category_name'] ?? 'Uncategorized');
             $author = htmlspecialchars($torrent['username'] ?? 'Unknown');
             

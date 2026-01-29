@@ -77,12 +77,12 @@ class TorrentController extends BaseController
         
         // Format sizes
         foreach ($torrents as &$torrent) {
-            $torrent['size_formatted'] = $this->formatBytes($torrent['size']);
+            $torrent['size_formatted'] = $this->formatBytes($torrent['size_bytes']);
         }
         
         // Get all categories
         $catStmt = $this->app->getDb()->query("
-            SELECT * FROM categories ORDER BY sort_order, name
+            SELECT * FROM categories ORDER BY position, name
         ");
         $categories = $catStmt->fetchAll();
         
