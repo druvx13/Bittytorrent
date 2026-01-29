@@ -1,5 +1,6 @@
 # Dependencies
-/vendor/
+# NOTE: vendor/ is now included in the repository for easier deployment
+# /vendor/
 /node_modules/
 
 # Environment

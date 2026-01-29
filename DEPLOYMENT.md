@@ -1,5 +1,7 @@
 # Production Deployment Guide
 
+**🎉 EASY DEPLOYMENT:** The `vendor/` directory is **included in this repository**. You do NOT need Composer to deploy!
+
 This guide covers deploying Bittytorrent to a production server.
 
 ## Table of Contents
@@ -18,7 +20,6 @@ Before deploying, ensure your production server has:
 
 - **PHP 8.1 or higher**
 - **MySQL 5.7+ or MariaDB 10.2+**
-- **Composer** (or ability to upload vendor directory)
 - **Apache or Nginx** web server
 - **mod_rewrite** enabled (Apache) or equivalent (Nginx)
 - **PHP Extensions**:
@@ -28,15 +29,17 @@ Before deploying, ensure your production server has:
   - json
   - curl (optional)
 
+**Note:** ✅ **Composer is NOT required!** The `vendor/` directory is included in the repository for easy deployment.
+
 ## Deployment Methods
 
-### Method 1: Git + Composer (Recommended)
+### Method 1: Git Clone (Recommended)
 
-Best for servers with SSH access and Composer installed.
+Best for servers with SSH access. **No Composer needed!**
 
 ### Method 2: FTP/SFTP Upload
 
-For shared hosting without SSH access.
+For shared hosting without SSH access. **No Composer needed!**
 
 ### Method 3: cPanel/Control Panel
 
@@ -44,7 +47,9 @@ For hosting with control panel interfaces.
 
 ## Step-by-Step Deployment
 
-### Method 1: Git + Composer (SSH Access)
+### Method 1: Git Clone (SSH Access)
+
+**✅ vendor/ is already included - No Composer installation required!**
 
 **1. Connect to your server:**
 ```bash
@@ -62,9 +67,10 @@ git clone https://github.com/druvx13/Bittytorrent.git
 cd Bittytorrent
 ```
 
-**4. Install Composer dependencies:**
+**4. Dependencies already included:**
 ```bash
-composer install --no-dev --optimize-autoloader
+# ✅ vendor/ directory is already in the repo!
+# NO NEED to run: composer install
 ```
 
 **5. Set up environment:**
@@ -93,20 +99,13 @@ See [Web Server Configuration](#web-server-configuration) below.
 
 ### Method 2: FTP/SFTP Upload
 
-**1. Prepare locally:**
+**✅ No Composer needed - just upload all files!**
 
-On your local machine:
+**1. Prepare locally (optional):**
+
+Download the repository as ZIP from GitHub or clone it:
 ```bash
-# Clone repository
 git clone https://github.com/druvx13/Bittytorrent.git
-cd Bittytorrent
-
-# Install dependencies
-composer install --no-dev --optimize-autoloader
-
-# Create .env file
-cp .env.example .env
-# Edit .env with production database credentials
 ```
 
 **2. Upload files:**
@@ -114,14 +113,21 @@ cp .env.example .env
 Upload ALL files and directories to your server, including:
 - `public/` directory
 - `src/` directory
-- `vendor/` directory (IMPORTANT!)
+- **`vendor/` directory** ← **ALREADY INCLUDED!**
 - `config/` directory
 - `views/` directory
 - `bin/` directory
 - `var/` directory
-- `.env` file (with your settings)
 - `composer.json`, `composer.lock`
 - `.htaccess` file (if using Apache)
+
+**Note:** You do NOT need to run `composer install` - just upload everything!
+
+**3. Create .env file:**
+
+Either create it locally and upload, or create on server:
+- Copy `.env.example` to `.env`
+- Edit with your production database credentials
 
 **3. Set up database via browser:**
 
@@ -326,13 +332,31 @@ crontab -e
 
 ### Error: "vendor/autoload.php not found"
 
-**Solution:**
+**This error should not occur anymore** since vendor/ is included in the repository.
+
+**If you still see this error:**
+1. Check if you uploaded the `vendor/` directory
+2. Verify `vendor/autoload.php` file exists on server
+3. Check file permissions (should be readable)
+
+**Quick fix:**
 ```bash
-cd /path/to/Bittytorrent
-composer install --no-dev --optimize-autoloader
+# If vendor is missing, verify it's in your local copy
+ls -la vendor/
+
+# If vendor exists locally, upload it to server
+# Make sure to upload the ENTIRE vendor/ directory
 ```
 
-Or upload the `vendor/` directory via FTP.
+**Alternative if using Git:**
+```bash
+git status  # Check if vendor is ignored
+git pull    # Get latest with vendor included
+ls -la vendor/  # Should show all dependencies
+```
+
+**If you prefer to use Composer instead:**
+See `VENDOR_MANAGEMENT.md` for instructions on excluding vendor/ and using Composer.
 
 ### Error: "Database connection failed"
 
