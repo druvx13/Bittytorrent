@@ -58,7 +58,12 @@ class Application
             'app_env' => $_ENV['APP_ENV'] ?? 'production',
             'app_debug' => filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'app_url' => $_ENV['APP_URL'] ?? 'http://localhost',
-            'db_path' => __DIR__ . '/../' . ($_ENV['DB_DATABASE'] ?? 'var/database/bittytorrent.sqlite'),
+            'db_connection' => $_ENV['DB_CONNECTION'] ?? 'mysql',
+            'db_host' => $_ENV['DB_HOST'] ?? 'localhost',
+            'db_port' => $_ENV['DB_PORT'] ?? '3306',
+            'db_database' => $_ENV['DB_DATABASE'] ?? 'bittytorrent',
+            'db_username' => $_ENV['DB_USERNAME'] ?? 'root',
+            'db_password' => $_ENV['DB_PASSWORD'] ?? '',
             'log_file' => __DIR__ . '/../' . ($_ENV['LOG_FILE'] ?? 'var/logs/app.log'),
             'session_name' => $_ENV['SESSION_NAME'] ?? 'bittytorrent_session',
             'session_lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 7200),
@@ -93,19 +98,24 @@ class Application
     private function initializeDatabase(): void
     {
         try {
-            $dbDir = dirname($this->config['db_path']);
+            $dsn = sprintf(
+                'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                $this->config['db_host'],
+                $this->config['db_port'],
+                $this->config['db_database']
+            );
             
-            if (!is_dir($dbDir)) {
-                mkdir($dbDir, 0755, true);
-            }
-            
-            $dsn = 'sqlite:' . $this->config['db_path'];
-            $this->db = new PDO($dsn);
-            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            
-            // Enable foreign keys for SQLite
-            $this->db->exec('PRAGMA foreign_keys = ON');
+            $this->db = new PDO(
+                $dsn,
+                $this->config['db_username'],
+                $this->config['db_password'],
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                ]
+            );
             
             $this->logger->info('Database connection established');
         } catch (PDOException $e) {

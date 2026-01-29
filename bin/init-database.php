@@ -6,7 +6,7 @@ declare(strict_types=1);
 /**
  * Database Initialization Script
  * 
- * Creates SQLite database and initializes schema
+ * Creates MySQL database and initializes schema
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -17,32 +17,60 @@ use Dotenv\Dotenv;
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->safeLoad();
 
-$dbPath = __DIR__ . '/../' . ($_ENV['DB_DATABASE'] ?? 'var/database/bittytorrent.sqlite');
+$dbHost = $_ENV['DB_HOST'] ?? 'localhost';
+$dbPort = $_ENV['DB_PORT'] ?? '3306';
+$dbName = $_ENV['DB_DATABASE'] ?? 'bittytorrent';
+$dbUser = $_ENV['DB_USERNAME'] ?? 'root';
+$dbPass = $_ENV['DB_PASSWORD'] ?? '';
 $schemaPath = __DIR__ . '/../config/schema.sql';
 
 echo "Bittytorrent Database Initialization\n";
 echo "=====================================\n\n";
 
-// Create database directory if it doesn't exist
-$dbDir = dirname($dbPath);
-if (!is_dir($dbDir)) {
-    echo "Creating database directory: $dbDir\n";
-    mkdir($dbDir, 0755, true);
-}
-
-// Check if database exists
-if (file_exists($dbPath)) {
-    echo "Warning: Database already exists at: $dbPath\n";
-    echo "Recreating database (this will DELETE all existing data)...\n";
-    unlink($dbPath);
-    echo "Deleted existing database.\n";
-}
+echo "Database Configuration:\n";
+echo "  Host: $dbHost:$dbPort\n";
+echo "  Database: $dbName\n";
+echo "  User: $dbUser\n\n";
 
 try {
-    // Create database connection
-    echo "Creating database at: $dbPath\n";
-    $pdo = new PDO('sqlite:' . $dbPath);
+    // Connect to MySQL server (without selecting database)
+    $dsn = "mysql:host=$dbHost;port=$dbPort;charset=utf8mb4";
+    $pdo = new PDO($dsn, $dbUser, $dbPass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    echo "Connected to MySQL server successfully.\n\n";
+    
+    // Check if database exists
+    $stmt = $pdo->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$dbName'");
+    $dbExists = $stmt->fetch();
+    
+    if ($dbExists) {
+        echo "Warning: Database '$dbName' already exists.\n";
+        echo "Do you want to DROP and recreate it? This will DELETE all data! (yes/no): ";
+        $handle = fopen("php://stdin", "r");
+        $line = trim(fgets($handle));
+        fclose($handle);
+        
+        if (strtolower($line) === 'yes') {
+            echo "Dropping existing database...\n";
+            $pdo->exec("DROP DATABASE `$dbName`");
+            echo "Database dropped.\n";
+        } else {
+            echo "Using existing database.\n";
+            // Switch to the database
+            $pdo->exec("USE `$dbName`");
+        }
+    }
+    
+    // Create database if it doesn't exist
+    if (!$dbExists || strtolower($line ?? '') === 'yes') {
+        echo "Creating database '$dbName'...\n";
+        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        echo "Database created successfully.\n";
+    }
+    
+    // Switch to the database
+    $pdo->exec("USE `$dbName`");
     
     // Read and execute schema
     echo "Loading schema from: $schemaPath\n";
@@ -53,7 +81,18 @@ try {
     }
     
     echo "Executing schema...\n";
-    $pdo->exec($schema);
+    
+    // Split schema into individual statements and execute them
+    $statements = array_filter(
+        array_map('trim', explode(';', $schema)),
+        fn($stmt) => !empty($stmt) && !preg_match('/^\s*--/', $stmt)
+    );
+    
+    foreach ($statements as $statement) {
+        if (!empty($statement)) {
+            $pdo->exec($statement);
+        }
+    }
     
     echo "\n✓ Database initialized successfully!\n\n";
     
