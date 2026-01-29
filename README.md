@@ -55,7 +55,7 @@ Bittytorrent is a **modern, secure PHP BitTorrent tracker** that allows you to d
 
 ### Technology Stack
 - ⚡ **PHP 8.1+** - Modern PHP with strict typing and PSR-4 autoloading
-- 🗄️ **SQLite Database** - Lightweight, portable database with PDO
+- 🗄️ **MySQL Database** - Robust, scalable database with PDO
 - 🎨 **Twig Templates** - Clean, secure templating engine
 - 📱 **Bootstrap 5** - Responsive, mobile-friendly UI
 - 📦 **Composer** - Modern dependency management
@@ -80,6 +80,7 @@ Bittytorrent is a **modern, secure PHP BitTorrent tracker** that allows you to d
 ### Prerequisites
 
 - PHP 8.1 or higher
+- MySQL 5.7+ or MariaDB 10.2+
 - Composer
 - Web server (Apache with mod_rewrite OR Nginx)
 - Basic command line knowledge
@@ -96,7 +97,7 @@ composer install --no-dev --optimize-autoloader
 
 # 3. Configure environment
 cp .env.example .env
-# Edit .env with your settings (optional for development)
+# Edit .env with your MySQL database credentials
 
 # 4. Initialize database
 php bin/init-database.php
@@ -143,7 +144,8 @@ We provide comprehensive documentation to help you get started:
 ### Minimum Requirements
 
 - **PHP:** 8.1 or higher
-- **Extensions:** PDO, PDO_SQLite, mbstring, JSON
+- **Database:** MySQL 5.7+ or MariaDB 10.2+
+- **Extensions:** PDO, PDO_MySQL, mbstring, JSON
 - **Web Server:** Apache (with mod_rewrite) or Nginx
 - **Composer:** Latest version
 - **Disk Space:** ~50 MB for application + space for torrents
@@ -151,6 +153,7 @@ We provide comprehensive documentation to help you get started:
 ### Recommended
 
 - PHP 8.2 or 8.3 for best performance
+- MySQL 8.0+ or MariaDB 10.5+
 - HTTPS/SSL certificate for production
 - Linux/Unix server environment
 - At least 512 MB RAM

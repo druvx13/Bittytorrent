@@ -47,19 +47,26 @@ Before starting, make sure you have:
 
 Check if you have these extensions (they usually come with PHP):
 ```bash
-php -m | grep -E "pdo|sqlite|mbstring|json"
+php -m | grep -E "pdo|mysql|mbstring|json"
 ```
 
 You should see:
 - pdo
-- pdo_sqlite
+- pdo_mysql
 - mbstring
 - json
 
 If any are missing, install them:
-- Ubuntu/Debian: `sudo apt install php8.1-sqlite3 php8.1-mbstring`
+- Ubuntu/Debian: `sudo apt install php8.1-mysql php8.1-mbstring`
 - macOS: Usually included with Homebrew PHP
 - Windows: Uncomment extensions in `php.ini`
+
+### MySQL Database
+
+You'll also need a MySQL server:
+- Ubuntu/Debian: `sudo apt install mysql-server`
+- macOS (Homebrew): `brew install mysql`
+- Windows: Download from [MySQL Downloads](https://dev.mysql.com/downloads/mysql/)
 
 ### System Resources
 
@@ -172,15 +179,39 @@ APP_NAME="Your Tracker Name"
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-domain.com
+
+# MySQL Database Configuration
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=bittytorrent
+DB_USERNAME=your_mysql_user
+DB_PASSWORD=your_mysql_password
 ```
 
 Press `Ctrl+X`, then `Y`, then `Enter` to save in nano.
+
+**Database Setup:**
+
+Before initializing the database, make sure you have created a MySQL user and database:
+
+```bash
+# Login to MySQL as root
+mysql -u root -p
+
+# Create database and user
+CREATE DATABASE bittytorrent CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'bittytorrent'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON bittytorrent.* TO 'bittytorrent'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
 
 ---
 
 ### Step 4: Initialize the Database
 
-This creates your SQLite database with tables and a default admin account:
+This creates your MySQL database with tables and a default admin account:
 
 ```bash
 php bin/init-database.php
@@ -191,7 +222,15 @@ php bin/init-database.php
 Bittytorrent Database Initialization
 =====================================
 
-Creating database at: var/database/bittytorrent.sqlite
+Database Configuration:
+  Host: localhost:3306
+  Database: bittytorrent
+  User: bittytorrent
+
+Connected to MySQL server successfully.
+
+Creating database 'bittytorrent'...
+Database created successfully.
 Loading schema...
 Executing schema...
 
@@ -206,12 +245,12 @@ Password: admin123
 ```
 
 **What this does:**
-- Creates `var/database/bittytorrent.sqlite` file
+- Creates MySQL database with proper charset (utf8mb4)
 - Creates all necessary database tables
 - Adds default categories (Movies, TV Shows, Music, etc.)
 - Creates an admin account
 
-**Time:** ~5 seconds
+**Time:** ~5-10 seconds
 
 ---
 
@@ -446,11 +485,18 @@ Admin features (to be implemented):
 
 **Solution:**
 ```bash
+# Check MySQL is running
+sudo systemctl status mysql  # Linux
+brew services list | grep mysql  # macOS
+
 # Reinitialize database
 php bin/init-database.php
 
-# Check if database file exists
-ls -la var/database/bittytorrent.sqlite
+# Verify database credentials in .env
+cat .env | grep DB_
+
+# Test MySQL connection
+mysql -h localhost -u your_user -p bittytorrent
 ```
 
 ### Issue: "Page not found (404)" on all pages
@@ -484,7 +530,7 @@ php -m
 
 **Install on Ubuntu/Debian:**
 ```bash
-sudo apt install php8.1-sqlite3 php8.1-mbstring php8.1-xml
+sudo apt install php8.1-mysql php8.1-mbstring php8.1-xml
 ```
 
 ### Issue: Cannot upload files
@@ -542,8 +588,11 @@ For a live website, you should:
 
 3. **Set up backups**
    ```bash
-   # Backup database daily
-   cp var/database/bittytorrent.sqlite backups/db-$(date +%Y%m%d).sqlite
+   # Backup MySQL database daily
+   mysqldump -u bittytorrent -p bittytorrent > backups/db-$(date +%Y%m%d).sql
+   
+   # Or use a cron job
+   0 2 * * * mysqldump -u bittytorrent -p'password' bittytorrent | gzip > /backups/db-$(date +\%Y\%m\%d).sql.gz
    ```
 
 4. **Configure cron jobs**

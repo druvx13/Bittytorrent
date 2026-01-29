@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - PHP 8.1 or higher
+- MySQL 5.7+ or MariaDB 10.2+
 - Web server (Apache or Nginx)
 - Composer
 
@@ -20,8 +21,18 @@ composer install --no-dev --optimize-autoloader
 
 ```bash
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your MySQL database credentials
 nano .env
+```
+
+Configure your database connection in `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=bittytorrent
+DB_USERNAME=your_mysql_user
+DB_PASSWORD=your_mysql_password
 ```
 
 ### 3. Initialize Database

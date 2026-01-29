@@ -5,7 +5,7 @@ A modern, secure PHP BitTorrent tracker rebuilt with contemporary technologies a
 ## Features
 
 - **Modern PHP 8.1+** with strict typing and PSR-4 autoloading
-- **SQLite Database** with PDO and prepared statements for security
+- **MySQL Database** with PDO and prepared statements for security
 - **Twig Templating Engine** for clean, maintainable views
 - **Bootstrap 5** for responsive, modern UI
 - **Secure Authentication** using Argon2id password hashing
@@ -18,7 +18,8 @@ A modern, secure PHP BitTorrent tracker rebuilt with contemporary technologies a
 ## Requirements
 
 - PHP 8.1 or higher
-- PHP Extensions: PDO, SQLite3, mbstring, JSON
+- MySQL 5.7+ or MariaDB 10.2+
+- PHP Extensions: PDO, PDO_MySQL, mbstring, JSON
 - Apache with mod_rewrite (or Nginx with appropriate configuration)
 - Composer
 
@@ -51,8 +52,20 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=http://your-domain.com
 
-DB_CONNECTION=sqlite
-DB_DATABASE=var/database/bittytorrent.sqlite
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=bittytorrent
+DB_USERNAME=your_mysql_user
+DB_PASSWORD=your_mysql_password
+```
+
+**Important:** Make sure to create the MySQL database user and set appropriate permissions:
+
+```sql
+CREATE USER 'bittytorrent'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON bittytorrent.* TO 'bittytorrent'@'localhost';
+FLUSH PRIVILEGES;
 ```
 
 ### 4. Initialize Database
@@ -61,7 +74,7 @@ DB_DATABASE=var/database/bittytorrent.sqlite
 php bin/init-database.php
 ```
 
-This will create the SQLite database with the initial schema and a default admin account.
+This will create the MySQL database with the initial schema and a default admin account.
 
 **Default Admin Credentials:**
 - Username: `admin`
