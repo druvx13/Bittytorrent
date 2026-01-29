@@ -1,0 +1,58 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2>Edit Torrent</h2>
+            
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            
+            <form method="POST" action="/torrent/{{ torrent.id }}/update">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title *</label>
+                    <input type="text" class="form-control" id="title" name="title" value="{{ torrent.title }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="category_id" class="form-label">Category</label>
+                    <select class="form-select" id="category_id" name="category_id">
+                        <option value="">-- None --</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if torrent.category_id == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="10">{{ torrent.description }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Info Hash (Read-only)</label>
+                    <input type="text" class="form-control" value="{{ torrent.info_hash }}" readonly>
+                    <small class="form-text text-muted">The info hash cannot be changed.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Size (Read-only)</label>
+                    <input type="text" class="form-control" value="{{ torrent.size_bytes|number_format }} bytes" readonly>
+                    <small class="form-text text-muted">The file size cannot be changed.</small>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update Torrent</button>
+                    <a href="/torrent/{{ torrent.id }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

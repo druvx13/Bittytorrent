@@ -293,6 +293,16 @@ try {
         $controller->show($id);
     });
     
+    $router->get('/torrent/:id/edit', function ($id) {
+        $controller = new TorrentController();
+        $controller->edit($id);
+    });
+    
+    $router->post('/torrent/:id/update', function ($id) {
+        $controller = new TorrentController();
+        $controller->update($id);
+    });
+    
     $router->get('/upload', function () {
         $controller = new TorrentController();
         $controller->showUpload();

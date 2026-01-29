@@ -238,6 +238,47 @@ class Torrent
     }
     
     /**
+     * Update torrent metadata
+     */
+    public function update(int $id, array $data): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE torrents 
+            SET title = ?, slug = ?, description = ?, category_id = ?
+            WHERE id = ?
+        ");
+        
+        try {
+            return $stmt->execute([
+                $data['title'],
+                $this->generateSlug($data['title']),
+                $data['description'] ?? '',
+                $data['category_id'] ?? null,
+                $id
+            ]);
+        } catch (\PDOException $e) {
+            Application::getInstance()->getLogger()->error('Torrent update failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if user owns torrent or is admin
+     */
+    public function canUserEdit(int $torrentId, int $userId, bool $isAdmin): bool
+    {
+        if ($isAdmin) {
+            return true;
+        }
+        
+        $stmt = $this->db->prepare("SELECT user_id FROM torrents WHERE id = ?");
+        $stmt->execute([$torrentId]);
+        $torrent = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $torrent && (int)$torrent['user_id'] === $userId;
+    }
+    
+    /**
      * Delete torrent
      */
     public function delete(int $id): bool

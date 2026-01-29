@@ -334,4 +334,115 @@ class TorrentController extends BaseController
         
         readfile($filepath);
     }
+    
+    /**
+     * Show edit torrent form
+     */
+    public function edit(string $id): void
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
+            return;
+        }
+        
+        $user = $this->app->getCurrentUser();
+        $torrentModel = new Torrent();
+        $torrent = $torrentModel->findById((int)$id);
+        
+        if (!$torrent) {
+            http_response_code(404);
+            $this->render('error/404.twig', ['title' => 'Torrent Not Found']);
+            return;
+        }
+        
+        // Check permissions
+        $isAdmin = $user && $user['role'] === 'admin';
+        if (!$torrentModel->canUserEdit((int)$id, (int)$user['id'], $isAdmin)) {
+            http_response_code(403);
+            $this->render('error/403.twig', ['title' => 'Access Denied']);
+            return;
+        }
+        
+        // Get categories
+        $categoriesStmt = $this->app->getDb()->query("SELECT id, name FROM categories ORDER BY position, name");
+        $categories = $categoriesStmt->fetchAll(\PDO::FETCH_ASSOC);
+        
+        $this->render('torrent/edit.twig', [
+            'title' => 'Edit Torrent',
+            'torrent' => $torrent,
+            'categories' => $categories,
+        ]);
+    }
+    
+    /**
+     * Update torrent
+     */
+    public function update(string $id): void
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
+            return;
+        }
+        
+        $user = $this->app->getCurrentUser();
+        $torrentModel = new Torrent();
+        $torrent = $torrentModel->findById((int)$id);
+        
+        if (!$torrent) {
+            http_response_code(404);
+            echo 'Torrent not found';
+            return;
+        }
+        
+        // Check permissions
+        $isAdmin = $user && $user['role'] === 'admin';
+        if (!$torrentModel->canUserEdit((int)$id, (int)$user['id'], $isAdmin)) {
+            http_response_code(403);
+            echo 'Access denied';
+            return;
+        }
+        
+        // Validate CSRF token
+        if (!$this->app->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            http_response_code(403);
+            echo 'Invalid CSRF token';
+            return;
+        }
+        
+        $title = trim($_POST['title'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $categoryId = isset($_POST['category_id']) ? (int)$_POST['category_id'] : null;
+        
+        // Validation
+        if (empty($title)) {
+            $this->render('torrent/edit.twig', [
+                'title' => 'Edit Torrent',
+                'torrent' => $torrent,
+                'error' => 'Title is required.',
+            ]);
+            return;
+        }
+        
+        // Update torrent
+        $updated = $torrentModel->update((int)$id, [
+            'title' => $title,
+            'description' => $description,
+            'category_id' => $categoryId,
+        ]);
+        
+        if ($updated) {
+            $this->logger->info('Torrent updated', [
+                'torrent_id' => $id,
+                'user_id' => $user['id'],
+            ]);
+            
+            $this->redirect('/torrent/' . $id);
+        } else {
+            $this->render('torrent/edit.twig', [
+                'title' => 'Edit Torrent',
+                'torrent' => $torrent,
+                'error' => 'Failed to update torrent.',
+            ]);
+        }
+    }
 }

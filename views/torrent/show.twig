@@ -88,6 +88,11 @@
                     <a href="/download/{{ torrent.id }}" class="btn btn-success btn-lg">
                         <i class="bi bi-download"></i> Download Torrent
                     </a>
+                    {% if user and (user.id == torrent.user_id or user.role == 'admin') %}
+                    <a href="/torrent/{{ torrent.id }}/edit" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit Torrent
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
