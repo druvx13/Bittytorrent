@@ -18,6 +18,8 @@ use Bittytorrent\Controller\AuthController;
 use Bittytorrent\Controller\TorrentController;
 use Bittytorrent\Controller\TrackerController;
 use Bittytorrent\Controller\AdminController;
+use Bittytorrent\Controller\UserController;
+use Bittytorrent\Controller\RSSController;
 
 // Check if running from CLI
 if (php_sapi_name() === 'cli') {
@@ -153,7 +155,38 @@ try {
         $controller->settings();
     });
     
+    $router->get('/admin/categories', function () {
+        $controller = new AdminController();
+        $controller->categories();
+    });
+    
+    $router->post('/admin/categories/add', function () {
+        $controller = new AdminController();
+        $controller->addCategory();
+    });
+    
+    $router->post('/admin/categories/edit', function () {
+        $controller = new AdminController();
+        $controller->editCategory();
+    });
+    
+    $router->post('/admin/categories/delete', function () {
+        $controller = new AdminController();
+        $controller->deleteCategory();
+    });
+    
     // Torrents
+    $router->get('/browse', function () {
+        $controller = new TorrentController();
+        $controller->browse();
+    });
+    
+    $router->get('/browse/category/:id', function ($id) {
+        $_GET['category'] = $id;
+        $controller = new TorrentController();
+        $controller->browse();
+    });
+    
     $router->get('/torrent/:id', function ($id) {
         $controller = new TorrentController();
         $controller->show($id);
@@ -172,6 +205,18 @@ try {
     $router->get('/download/:id', function ($id) {
         $controller = new TorrentController();
         $controller->download($id);
+    });
+    
+    // Users
+    $router->get('/user/:id', function ($id) {
+        $controller = new UserController();
+        $controller->show($id);
+    });
+    
+    // RSS Feed
+    $router->get('/rss', function () {
+        $controller = new RSSController();
+        $controller->feed();
     });
     
     // Tracker endpoints

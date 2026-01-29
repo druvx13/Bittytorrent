@@ -15,6 +15,99 @@ use Bittytorrent\Service\TorrentParser;
 class TorrentController extends BaseController
 {
     /**
+     * Browse torrents with search, filter, and pagination
+     */
+    public function browse(): void
+    {
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 25;
+        $offset = ($page - 1) * $perPage;
+        
+        $searchQuery = $_GET['q'] ?? '';
+        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
+        $sort = $_GET['sort'] ?? 'created_at';
+        $order = ($_GET['order'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
+        
+        // Validate sort field
+        $allowedSort = ['name', 'created_at', 'size', 'seeders', 'leechers', 'completed'];
+        if (!in_array($sort, $allowedSort, true)) {
+            $sort = 'created_at';
+        }
+        
+        // Build query
+        $where = ['1=1'];
+        $params = [];
+        
+        if ($searchQuery) {
+            $where[] = '(t.name LIKE ? OR t.description LIKE ?)';
+            $searchTerm = '%' . $searchQuery . '%';
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+        
+        if ($categoryId) {
+            $where[] = 't.category_id = ?';
+            $params[] = $categoryId;
+        }
+        
+        $whereSql = implode(' AND ', $where);
+        
+        // Get total count
+        $countStmt = $this->app->getDb()->prepare("
+            SELECT COUNT(*) FROM torrents t WHERE $whereSql
+        ");
+        $countStmt->execute($params);
+        $total = (int)$countStmt->fetchColumn();
+        $totalPages = max(1, (int)ceil($total / $perPage));
+        
+        // Get torrents
+        $stmt = $this->app->getDb()->prepare("
+            SELECT t.*, u.username, c.name as category_name,
+                   (SELECT COUNT(*) FROM peers p WHERE p.info_hash = t.info_hash AND p.is_seeder = 1) as seeders,
+                   (SELECT COUNT(*) FROM peers p WHERE p.info_hash = t.info_hash AND p.is_seeder = 0) as leechers
+            FROM torrents t
+            LEFT JOIN users u ON t.user_id = u.id
+            LEFT JOIN categories c ON t.category_id = c.id
+            WHERE $whereSql
+            ORDER BY t.$sort $order
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute(array_merge($params, [$perPage, $offset]));
+        $torrents = $stmt->fetchAll();
+        
+        // Format sizes
+        foreach ($torrents as &$torrent) {
+            $torrent['size_formatted'] = $this->formatBytes($torrent['size']);
+        }
+        
+        // Get all categories
+        $catStmt = $this->app->getDb()->query("
+            SELECT * FROM categories ORDER BY sort_order, name
+        ");
+        $categories = $catStmt->fetchAll();
+        
+        // Get current category if filtering
+        $category = null;
+        if ($categoryId) {
+            $catDetailStmt = $this->app->getDb()->prepare("SELECT * FROM categories WHERE id = ?");
+            $catDetailStmt->execute([$categoryId]);
+            $category = $catDetailStmt->fetch();
+        }
+        
+        $this->render('torrent/browse.twig', [
+            'title' => 'Browse Torrents',
+            'torrents' => $torrents,
+            'categories' => $categories,
+            'category' => $category,
+            'search_query' => $searchQuery,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'sort' => $sort,
+            'order' => $order,
+        ]);
+    }
+    
+    /**
      * Show torrent details
      */
     public function show(string $id): void

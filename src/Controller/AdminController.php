@@ -166,4 +166,153 @@ class AdminController extends BaseController
             'title' => 'Settings',
         ]);
     }
+    
+    /**
+     * Manage categories
+     */
+    public function categories(): void
+    {
+        $this->requireAdmin();
+        
+        $editId = isset($_GET['edit']) ? (int)$_GET['edit'] : null;
+        $editCategory = null;
+        
+        if ($editId) {
+            $stmt = $this->app->getDb()->prepare("SELECT * FROM categories WHERE id = ?");
+            $stmt->execute([$editId]);
+            $editCategory = $stmt->fetch();
+        }
+        
+        // Get all categories with torrent counts
+        $stmt = $this->app->getDb()->query("
+            SELECT c.*, COUNT(t.id) as torrent_count
+            FROM categories c
+            LEFT JOIN torrents t ON c.id = t.category_id
+            GROUP BY c.id
+            ORDER BY c.sort_order, c.name
+        ");
+        $categories = $stmt->fetchAll();
+        
+        $this->render('admin/categories.twig', [
+            'title' => 'Manage Categories',
+            'categories' => $categories,
+            'edit_category' => $editCategory,
+            'csrf_token' => $this->generateCSRFToken(),
+            'success' => $_SESSION['success_msg'] ?? null,
+            'error' => $_SESSION['error_msg'] ?? null,
+        ]);
+        
+        unset($_SESSION['success_msg'], $_SESSION['error_msg']);
+    }
+    
+    /**
+     * Add new category
+     */
+    public function addCategory(): void
+    {
+        $this->requireAdmin();
+        $this->requirePost();
+        $this->validateCSRFToken();
+        
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $sortOrder = (int)($_POST['sort_order'] ?? 0);
+        
+        if (empty($name)) {
+            $_SESSION['error_msg'] = 'Category name is required';
+            header('Location: /admin/categories');
+            exit;
+        }
+        
+        $stmt = $this->app->getDb()->prepare("
+            INSERT INTO categories (name, description, sort_order)
+            VALUES (?, ?, ?)
+        ");
+        
+        try {
+            $stmt->execute([$name, $description, $sortOrder]);
+            $_SESSION['success_msg'] = 'Category added successfully';
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error adding category: ' . $e->getMessage();
+        }
+        
+        header('Location: /admin/categories');
+        exit;
+    }
+    
+    /**
+     * Edit category
+     */
+    public function editCategory(): void
+    {
+        $this->requireAdmin();
+        $this->requirePost();
+        $this->validateCSRFToken();
+        
+        $id = (int)($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $sortOrder = (int)($_POST['sort_order'] ?? 0);
+        
+        if (empty($name) || $id <= 0) {
+            $_SESSION['error_msg'] = 'Invalid input';
+            header('Location: /admin/categories');
+            exit;
+        }
+        
+        $stmt = $this->app->getDb()->prepare("
+            UPDATE categories SET name = ?, description = ?, sort_order = ? WHERE id = ?
+        ");
+        
+        try {
+            $stmt->execute([$name, $description, $sortOrder, $id]);
+            $_SESSION['success_msg'] = 'Category updated successfully';
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error updating category: ' . $e->getMessage();
+        }
+        
+        header('Location: /admin/categories');
+        exit;
+    }
+    
+    /**
+     * Delete category
+     */
+    public function deleteCategory(): void
+    {
+        $this->requireAdmin();
+        $this->requirePost();
+        $this->validateCSRFToken();
+        
+        $id = (int)($_POST['id'] ?? 0);
+        
+        if ($id <= 0) {
+            $_SESSION['error_msg'] = 'Invalid category ID';
+            header('Location: /admin/categories');
+            exit;
+        }
+        
+        // Check if category has torrents
+        $checkStmt = $this->app->getDb()->prepare("SELECT COUNT(*) FROM torrents WHERE category_id = ?");
+        $checkStmt->execute([$id]);
+        $torrentCount = (int)$checkStmt->fetchColumn();
+        
+        if ($torrentCount > 0) {
+            $_SESSION['error_msg'] = 'Cannot delete category with existing torrents';
+            header('Location: /admin/categories');
+            exit;
+        }
+        
+        $stmt = $this->app->getDb()->prepare("DELETE FROM categories WHERE id = ?");
+        
+        try {
+            $stmt->execute([$id]);
+            $_SESSION['success_msg'] = 'Category deleted successfully';
+        } catch (\Exception $e) {
+            $_SESSION['error_msg'] = 'Error deleting category: ' . $e->getMessage();
+        }
+        
+        header('Location: /admin/categories');
+        exit;
+    }
 }
